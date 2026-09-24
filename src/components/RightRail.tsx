@@ -36,15 +36,6 @@ export function RightRail({ us, now, lesson }: Props) {
         )}
       </div>
 
-      {!partner && (
-        <div className="rail-box">
-          <span className="label">Just you so far</span>
-          <p className="hint">
-            <Link href="/settings#invite">Get an invite link</Link> to send to the other person.
-          </p>
-        </div>
-      )}
-
       {days !== null && days >= 0 && space.next_visit_on && (
         <div className="rail-box">
           <span className="label">Next time together</span>

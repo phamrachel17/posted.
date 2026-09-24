@@ -32,7 +32,10 @@ export async function sendMagicLink(_prev: FormState, formData: FormData): Promi
     options: { emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(next)}` },
   });
   if (error) {
-    if (error.status === 429) return { error: "Too many sign-in emails. Wait a minute, then try again." };
+    if (error.code === "over_email_send_rate_limit") {
+      return { error: "posted. has sent its limit of sign-in emails for now. Try again in an hour. If you already have a recent sign-in email, use the link in that one." };
+    }
+    if (error.status === 429) return { error: "That was a lot of sign-in emails in a row. Wait a minute, then try again." };
     return { error: "The sign-in email couldn't be sent. Try again in a moment." };
   }
   return { ok: true, message: email };

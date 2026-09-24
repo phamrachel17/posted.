@@ -13,8 +13,11 @@ export async function GET(request: NextRequest) {
     if (!error) return NextResponse.redirect(new URL(next, origin));
   }
 
+  // "different-browser": the code arrived but this browser didn't ask for it.
+  // "expired": Supabase already rejected the link (used, expired, or prefetched).
+  const reason = code ? "different-browser" : searchParams.get("error_code") === "otp_expired" ? "expired" : "link";
   const login = new URL("/login", origin);
-  login.searchParams.set("error", "link");
+  login.searchParams.set("error", reason);
   if (next !== "/") login.searchParams.set("next", next);
   return NextResponse.redirect(login);
 }

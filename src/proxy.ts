@@ -5,7 +5,17 @@ import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/c
 const PUBLIC_PATHS = ["/login", "/auth", "/invite", "/setup", "/preview", "/api/cron", "/manifest.webmanifest", "/icon", "/apple-icon"];
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // A sign-in code that landed somewhere other than the callback (for example the
+  // Site URL, when the redirect address wasn't on Supabase's allow-list). Send it on.
+  if (!pathname.startsWith("/auth/") && (searchParams.has("code") || searchParams.has("error_code"))) {
+    const url = new URL("/auth/callback", request.url);
+    searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    if (pathname !== "/") url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   if (!isSupabaseConfigured) {

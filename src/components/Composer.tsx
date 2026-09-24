@@ -137,7 +137,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
     startTransition(async () => {
       const result =
         mode === "day"
-          ? await createPost({ body: "", notebookId: target, day: day as DayMeta })
+          ? await createPost({ body: "", notebookId: null, day: day as DayMeta })
           : await createPost({ body, notebookId: target, photos: ready });
       if (result.error) {
         setError(result.error);
@@ -245,7 +245,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         {error && <p className="error-note"><b>{error}</b></p>}
         <div className="composer-row">
           <button type="button" className="composer-tool" onClick={() => setMode("write")}>Cancel</button>
-          {picker}
+          <span className="hint composer-day-where">Posts to Today</span>
           <button type="submit" className="btn btn-primary" disabled={!canPost}>{pending ? "Posting…" : "Post"}</button>
         </div>
       </form>
@@ -301,10 +301,12 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
           <span className="tool-label">Photo</span>
         </button>
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onPick(e.target.files)} />
-        <button type="button" className="composer-tool" onClick={() => setMode("day")}>
-          <Doodle name="day" size={18} />
-          <span className="tool-label">My day</span>
-        </button>
+        {!fixedNotebook && (
+          <button type="button" className="composer-tool" onClick={() => setMode("day")}>
+            <Doodle name="day" size={18} />
+            <span className="tool-label">My day</span>
+          </button>
+        )}
         {picker}
         <button
           type="button"

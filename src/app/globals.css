@@ -1171,6 +1171,12 @@ img {
   right: 7px;
   pointer-events: none;
 }
+.composer-day-where {
+  margin-left: auto;
+}
+.composer-row .composer-day-where + .btn-primary {
+  margin-left: 0;
+}
 .day-compose-head {
   display: flex;
   justify-content: space-between;

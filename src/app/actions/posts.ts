@@ -71,6 +71,7 @@ export async function createPost(input: {
   const day = input.day ? cleanDay(input.day) : null;
 
   if (input.day && !day) return { error: "Pick the weather for your day." };
+  if (day && input.notebookId) return { error: "My day posts go to Today, not a notebook." };
   if (!body && !photos.length && !audio && !day) return { error: "Write something or add a photo first." };
   if (body.length > 10_000) return { error: "That's longer than a post can be. Try splitting it in two." };
   if (photos.some((p) => !p.path.startsWith(`${us.space.id}/`))) return { error: "One of those photos didn't upload. Remove it and try again." };
