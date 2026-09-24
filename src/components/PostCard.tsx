@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- photos come from short-lived signed URLs */
 import Link from "next/link";
 import { inkStyle } from "@/lib/inks";
-import { DAY_PROMPTS, weatherLabel } from "@/lib/day";
+import { dayAnswers, dayFeeling } from "@/lib/day";
 import type { People } from "@/lib/people";
 import { exactTime, longDate, spokenTime } from "@/lib/time";
 import type { DayMeta, LessonMeta, Post } from "@/lib/types";
@@ -30,13 +30,17 @@ type Props = {
 const NEW_STAMP_MS = 20_000;
 
 function DayBody({ meta, authorId }: { meta: DayMeta; authorId: string }) {
+  const feeling = dayFeeling(meta);
+  const answers = dayAnswers(meta);
   return (
     <div className="day-card">
       <div className="day-top">
-        <div className="weather">
-          <Doodle name={`weather-${meta.weather}`} size={34} />
-          <b>{weatherLabel(meta.weather)}</b>
-        </div>
+        {feeling && (
+          <div className="weather">
+            <Doodle name={feeling.doodle} size={34} />
+            <b>{feeling.label}</b>
+          </div>
+        )}
         {meta.energy && (
           <div className="energy" aria-label={`Energy ${meta.energy} of 5`} data-author={authorId}>
             energy
@@ -44,12 +48,12 @@ function DayBody({ meta, authorId }: { meta: DayMeta; authorId: string }) {
           </div>
         )}
       </div>
-      {DAY_PROMPTS.some((p) => meta[p.key]) && (
+      {answers.length > 0 && (
         <dl className="day-fields">
-          {DAY_PROMPTS.filter((p) => meta[p.key]).map((p) => (
-            <div key={p.key}>
-              <dt>{p.label}</dt>
-              <dd>{meta[p.key]}</dd>
+          {answers.map((a) => (
+            <div key={a.key}>
+              <dt>{a.label}</dt>
+              <dd>{a.text}</dd>
             </div>
           ))}
         </dl>

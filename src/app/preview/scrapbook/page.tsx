@@ -30,7 +30,7 @@ export default function ScrapbookPreview() {
   const items = [
     { id: "s1", title: "First persimmons", post: post("a", "rachel", 1, { kind: "photo", body: "Saving you the ugliest one.", photos: [{ id: "p1", url: photo("#b0714a", "#4e3a2c"), width: 400, height: 500 }] }) },
     { id: "s2", title: null, post: post("b", "arya", 2, { kind: "voice", body: "The corgis were back.", audio: { id: "v1", url: null, mime: "audio/webm", duration_ms: 42000, peaks: Array.from({ length: 64 }, (_, i) => 20 + Math.round(60 * Math.abs(Math.sin(i * 0.7)))) } }) },
-    { id: "s3", title: "The good kind of tired", post: post("c", "arya", 4, { kind: "day", meta: { weather: "bright-spells", today: "Presented the migration plan." } }) },
+    { id: "s3", title: "The good kind of tired", post: post("c", "arya", 4, { kind: "day", meta: { mood: "calm", highlight: "Presented the migration plan." } }) },
     { id: "s4", title: null, post: post("d", "rachel", 6, { body: "I keep thinking about the way you said “we'll figure it out” like it was already true." }) },
     { id: "s5", title: "Seattle, finally", post: post("e", "arya", 9, { kind: "photo", photos: [{ id: "p2", url: photo("#8fb0c9", "#2f4a5f"), width: 400, height: 500 }, { id: "p3", url: photo("#c9b08f", "#5f4a2f"), width: 400, height: 500 }] }) },
   ];

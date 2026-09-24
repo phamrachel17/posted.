@@ -53,10 +53,10 @@ export default function PreviewPage() {
     post("p1", partner, 3, {
       kind: "day",
       meta: {
-        weather: "bright-spells", energy: 4,
-        today: "Presented the migration plan. Nobody asked the question I was dreading.",
-        proud: "Didn't rewrite my slides at midnight.",
-        tomorrow: "Dentist at 9, then groceries, finally.",
+        mood: "happy", energy: 4,
+        highlight: "Presented the migration plan. Nobody asked the question I was dreading.",
+        accomplished: "Finally finished the onboarding doc.",
+        grateful: "The guy with the three corgis.",
       },
     }),
     post("p2", partner, 7, {
@@ -106,7 +106,15 @@ export default function PreviewPage() {
             },
           }}
           preview
-          bucket={{ done: 7, total: 23, latest: { body: "Kerry Park at sunset", by: "Arya" } }}
+          jukebox={{
+            current: {
+              id: "j1", kind: "track", spotify_id: "4cOdK2wGLETKBW3PvgPWqT", title: "Never Gonna Give You Up", artist: "Rick Astley",
+              image: "https://i.scdn.co/image/ab67616d0000b273baf89eb11ec7c657805d2da0", set_by: "arya", created_at: new Date(now.getTime() - 20 * HOUR).toISOString(),
+            },
+            earlier: [
+              { id: "j2", kind: "track", spotify_id: "4cOdK2wGLETKBW3PvgPWqT", title: "Harvest Moon", artist: "Neil Young", image: null, set_by: "rachel", created_at: now.toISOString() },
+            ],
+          }}
         />
       </div>
     </PresenceProvider>

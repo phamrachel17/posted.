@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUs } from "@/lib/data";
-import { EMOJI, type DayMeta, type Emoji, type Weather } from "@/lib/types";
+import { EMOJI, type DayMeta, type Emoji, type Mood } from "@/lib/types";
 
 export type NewPhoto = { path: string; width: number; height: number; mime: string };
 export type NewAudio = { path: string; mime: string; duration_ms: number; peaks: number[] };
@@ -13,7 +13,7 @@ type Result = { error?: string; id?: string };
 
 const MAX_PHOTOS = 6;
 const MAX_VOICE_MS = 5 * 60 * 1000 + 2000;
-const WEATHERS: Weather[] = ["clear", "bright-spells", "overcast", "drizzle", "stormy"];
+const MOODS: Mood[] = ["happy", "calm", "tired", "stressed", "down"];
 const AUDIO_MIMES = ["audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg"];
 
 function refresh() {
@@ -42,16 +42,15 @@ function audioMedia(audio: NewAudio) {
 }
 
 function cleanDay(meta: DayMeta): DayMeta | null {
-  if (!WEATHERS.includes(meta.weather)) return null;
+  if (!meta.mood || !MOODS.includes(meta.mood)) return null;
   const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 1000) : undefined);
   const energy = typeof meta.energy === "number" && meta.energy >= 1 && meta.energy <= 5 ? Math.round(meta.energy) : undefined;
   return {
-    weather: meta.weather,
+    mood: meta.mood,
     energy,
-    today: text(meta.today),
-    proud: text(meta.proud),
-    thinking: text(meta.thinking),
-    tomorrow: text(meta.tomorrow),
+    highlight: text(meta.highlight),
+    accomplished: text(meta.accomplished),
+    grateful: text(meta.grateful),
   };
 }
 
@@ -70,7 +69,7 @@ export async function createPost(input: {
   const audio = input.audio ?? null;
   const day = input.day ? cleanDay(input.day) : null;
 
-  if (input.day && !day) return { error: "Pick the weather for your day." };
+  if (input.day && !day) return { error: "Pick a mood for your day." };
   if (day && input.notebookId) return { error: "My day posts go to Today, not a notebook." };
   if (!body && !photos.length && !audio && !day) return { error: "Write something or add a photo first." };
   if (body.length > 10_000) return { error: "That's longer than a post can be. Try splitting it in two." };

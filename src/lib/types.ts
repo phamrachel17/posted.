@@ -57,9 +57,16 @@ export type Notebook = NotebookRef & {
 
 export type Weather = "clear" | "bright-spells" | "overcast" | "drizzle" | "stormy";
 
+export type Mood = "happy" | "calm" | "tired" | "stressed" | "down";
+
 export type DayMeta = {
-  weather: Weather;
+  mood?: Mood;
   energy?: number;
+  highlight?: string;
+  accomplished?: string;
+  grateful?: string;
+  /** Older days, from before moods replaced the weather. */
+  weather?: Weather;
   today?: string;
   proud?: string;
   thinking?: string;

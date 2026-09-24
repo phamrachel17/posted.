@@ -5,9 +5,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPost } from "@/app/actions/posts";
 import { removeUpload, uploadPhoto } from "@/lib/upload";
 import { PhotoError } from "@/lib/images";
-import { DAY_PROMPTS, WEATHER } from "@/lib/day";
+import { DAY_PROMPTS, MOODS } from "@/lib/day";
 import { RECORD_EVENT } from "@/lib/events";
-import type { DayMeta, NotebookRef, Weather } from "@/lib/types";
+import type { DayMeta, NotebookRef } from "@/lib/types";
 import type { NewPhoto } from "@/app/actions/posts";
 import { Doodle } from "./Doodle";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -137,7 +137,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const ready = photos.filter((p) => p.photo).map((p) => p.photo!);
   const canPost =
     !preview && !pending &&
-    (mode === "day" ? Boolean(day.weather) : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
+    (mode === "day" ? Boolean(day.mood) : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
 
   function submit() {
     if (!canPost) return;
@@ -199,20 +199,21 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
       <form className="composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <div className="day-compose-head">
           <b>My day</b>
-          <span className="hint">Only the weather is needed</span>
+          <span className="hint">Only the mood is needed</span>
         </div>
-        <div className="weather-pick" role="radiogroup" aria-label="Weather">
-          {WEATHER.map((w) => (
+        <div className="weather-pick mood-pick" role="radiogroup" aria-label="Mood">
+          {MOODS.map((w) => (
             <button
               key={w.id}
               type="button"
               role="radio"
-              aria-checked={day.weather === w.id}
+              aria-checked={day.mood === w.id}
               aria-label={w.label}
               title={w.label}
-              onClick={() => setDay((d) => ({ ...d, weather: w.id as Weather }))}
+              onClick={() => setDay((d) => ({ ...d, mood: w.id }))}
             >
-              <Doodle name={`weather-${w.id}`} size={30} />
+              <Doodle name={`mood-${w.id}`} size={30} />
+              <span className="mood-name">{w.label}</span>
             </button>
           ))}
         </div>

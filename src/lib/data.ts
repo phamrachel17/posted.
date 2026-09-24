@@ -438,3 +438,31 @@ export const getBucketList = cache(async (): Promise<{ missing: boolean; items: 
   if (error) return { missing: true, items: [] };
   return { missing: false, items: data as BucketItem[] };
 });
+
+// ---------------------------------------------------------------------------
+// Jukebox
+// ---------------------------------------------------------------------------
+
+export type Song = {
+  id: string;
+  kind: "track" | "album" | "playlist";
+  spotify_id: string;
+  title: string;
+  artist: string | null;
+  image: string | null;
+  set_by: string;
+  created_at: string;
+};
+
+/** What's on the record player now, plus the few before it. `missing` if the migration hasn't run. */
+export async function getJukebox(): Promise<{ missing: boolean; current: Song | null; earlier: Song[] }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("jukebox_songs")
+    .select("id, kind, spotify_id, title, artist, image, set_by, created_at")
+    .order("created_at", { ascending: false })
+    .limit(6);
+  if (error) return { missing: true, current: null, earlier: [] };
+  const songs = data as Song[];
+  return { missing: false, current: songs[0] ?? null, earlier: songs.slice(1) };
+}

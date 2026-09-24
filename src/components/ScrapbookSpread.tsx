@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- photos come from short-lived signed URLs */
 import Link from "next/link";
-import { weatherLabel } from "@/lib/day";
+import { dayAnswers, dayFeeling } from "@/lib/day";
 import { inkStyle, type Ink } from "@/lib/inks";
 import { longDate } from "@/lib/time";
 import { formatDuration } from "@/lib/duration";
@@ -66,9 +66,9 @@ function Item({ post, title, who, readOnly }: { post: Post; title: string | null
     return (
       <div className="scrap weather-tile" style={style}>
         {!readOnly && <ScrapRemove postId={post.id} />}
-        <Doodle name={`weather-${meta.weather}`} size={40} />
-        <b>{weatherLabel(meta.weather)}</b>
-        {meta.today && <span className="scrap-caption">{meta.today}</span>}
+        {dayFeeling(meta) && <Doodle name={dayFeeling(meta)!.doodle} size={40} />}
+        <b>{dayFeeling(meta)?.label ?? "My day"}</b>
+        {dayAnswers(meta)[0] && <span className="scrap-caption">{dayAnswers(meta)[0].text}</span>}
         <ScrapTitle postId={post.id} title={title} />
         {byline}
       </div>

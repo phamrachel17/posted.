@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { inkStyle } from "@/lib/inks";
-import { clockTime, daysUntil, longDate } from "@/lib/time";
+import { clockTime, daysUntil, localStamp, longDate, spokenTime } from "@/lib/time";
 import { conditions, distanceKm, formatDistance, formatTemp, geocode, usesImperial, type Conditions } from "@/lib/weather";
-import type { LessonSummary } from "@/lib/data";
+import type { LessonSummary, Song } from "@/lib/data";
 import type { Member, NotebookRef, Us } from "@/lib/types";
 import { Doodle } from "./Doodle";
+import { Jukebox } from "./Jukebox";
 import { LiveClock } from "./LiveClock";
 import { OnlineDot } from "./Presence";
 
-export type BucketStat = { done: number; total: number; latest: { body: string; by: string } | null };
+export type JukeboxData = { current: Song | null; earlier: Song[] };
 
 type Props = {
   us: Us;
   now: Date;
   lesson: (LessonSummary & { notebook: NotebookRef }) | null;
-  bucket?: BucketStat | null;
+  jukebox?: JukeboxData | null;
+  preview?: boolean;
 };
 
 function WeatherLine({ c, imperial }: { c: Conditions | null; imperial: boolean }) {
@@ -43,7 +45,7 @@ function Clock({ m, label, now, weather, imperial, online }: { m: Member; label:
   );
 }
 
-export async function RightRail({ us, now, lesson, bucket }: Props) {
+export async function RightRail({ us, now, lesson, jukebox, preview }: Props) {
   const { me, partner, space } = us;
   const imperial = usesImperial(me.timezone);
   const days = space.next_visit_on ? daysUntil(space.next_visit_on, me.timezone, now) : null;
@@ -60,6 +62,7 @@ export async function RightRail({ us, now, lesson, bucket }: Props) {
     theirPlace ? conditions(theirPlace) : Promise.resolve(null),
   ]);
   const km = myPlace && theirPlace ? distanceKm(myPlace, theirPlace) : null;
+  const names = Object.fromEntries([me, partner].filter(Boolean).map((m) => [m!.id, m!.display_name]));
 
   return (
     <aside className="rail" aria-label="The two of you">
@@ -87,28 +90,22 @@ export async function RightRail({ us, now, lesson, bucket }: Props) {
         </div>
       )}
 
-      {bucket && (
+      {jukebox && (
         <div className="rail-box">
-          <span className="label">Bucket list</span>
-          <Link href="/bucket-list" className="bucket-stat">
-            {bucket.total === 0 ? (
-              <span>Start a list of things to do together.</span>
-            ) : (
-              <>
-                <span className="bucket-stat-num">
-                  <b>{bucket.done}</b> of {bucket.total} done
-                </span>
-                <span className="bucket-bar" aria-hidden>
-                  <i style={{ width: `${Math.round((bucket.done / bucket.total) * 100)}%` }} />
-                </span>
-                {bucket.latest && (
-                  <span className="hint">
-                    Latest: {bucket.latest.body} ({bucket.latest.by})
-                  </span>
-                )}
-              </>
-            )}
-          </Link>
+          <span className="label">On the record player</span>
+          <Jukebox
+            current={jukebox.current}
+            earlier={jukebox.earlier}
+            names={names}
+            meId={me.id}
+            spaceId={space.id}
+            when={
+              jukebox.current
+                ? spokenTime(jukebox.current.created_at, localStamp(new Date(jukebox.current.created_at), (jukebox.current.set_by === me.id ? me : partner ?? me).timezone), me.timezone, now)
+                : null
+            }
+            preview={preview}
+          />
         </div>
       )}
 
