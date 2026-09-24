@@ -31,14 +31,9 @@ export function LoginForm({ next, newcomer }: Props) {
 
   return (
     <div className="form">
-      <div className="auth-tabs" role="tablist" aria-label="How to sign in">
-        <button type="button" role="tab" aria-selected={mode !== "link"} onClick={() => setMode(newcomer ? "create" : "password")}>
-          Password
-        </button>
-        <button type="button" role="tab" aria-selected={mode === "link"} onClick={() => setMode("link")}>
-          Email me a link
-        </button>
-      </div>
+      {mode === "link" && (
+        <p className="hint">We&rsquo;ll email you a one-time link that signs you in. Once you&rsquo;re in, you can set a new password under You two.</p>
+      )}
 
       <form action={action} className="form" key={mode}>
         <input type="hidden" name="next" value={next ?? "/"} />
@@ -57,7 +52,17 @@ export function LoginForm({ next, newcomer }: Props) {
               minLength={mode === "create" ? 8 : undefined}
               autoComplete={mode === "create" ? "new-password" : "current-password"}
             />
-            {mode === "create" && <span className="hint">At least 8 characters.</span>}
+            {mode === "password" && (
+              <button type="button" className="text-link" onClick={() => setMode("link")}>
+                Forgot your password? Email me a sign-in link
+              </button>
+            )}
+            {mode === "create" && (
+              <span className="hint">
+                At least 8 characters.
+                {!newcomer && " This starts a new space for you. To join someone\u2019s space, open the invite link they sent you."}
+              </span>
+            )}
           </div>
         )}
 
@@ -68,11 +73,16 @@ export function LoginForm({ next, newcomer }: Props) {
           {mode === "password" && <SubmitButton pendingText="Signing in…">Sign in</SubmitButton>}
           {mode === "create" && <SubmitButton pendingText="Creating…">Create account</SubmitButton>}
 
-          {mode === "password" && newcomer && (
-            <button type="button" className="btn btn-quiet" onClick={() => setMode("create")}>New here? Create a password</button>
+          {mode === "password" && (
+            <button type="button" className="btn btn-quiet" onClick={() => setMode("create")}>
+              {newcomer ? "New here? Create a password" : "New here? Create an account"}
+            </button>
           )}
           {mode === "create" && (
             <button type="button" className="btn btn-quiet" onClick={() => setMode("password")}>Already have a password? Sign in</button>
+          )}
+          {mode === "link" && (
+            <button type="button" className="btn btn-quiet" onClick={() => setMode(newcomer ? "create" : "password")}>Back to password</button>
           )}
         </div>
       </form>

@@ -279,25 +279,19 @@ img {
   line-height: 1.45;
 }
 
-.auth-tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--rule);
-}
-.auth-tabs button {
+.text-link {
+  align-self: flex-start;
   border: 0;
   background: none;
-  padding: 8px 2px;
-  margin-right: 18px;
-  font-size: 14px;
+  padding: 2px 0;
+  font-size: 13px;
   color: var(--ink-2);
-  border-bottom: 1.5px solid transparent;
-  margin-bottom: -1px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
 }
-.auth-tabs button[aria-selected="true"] {
+.text-link:hover {
   color: var(--ink);
-  font-weight: 500;
-  border-bottom-color: var(--stamp);
 }
 .auth-actions {
   display: flex;
@@ -316,6 +310,57 @@ img {
 .field input[type="password"]:focus {
   outline: none;
   border-bottom: 1.5px solid var(--ink-c);
+}
+
+.how {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 26px;
+  border-top: 1px solid var(--rule);
+}
+.how h2.label {
+  font-family: var(--sans);
+  line-height: 1.4;
+}
+.how ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: how;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.how li {
+  counter-increment: how;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  column-gap: 12px;
+  row-gap: 2px;
+}
+.how li::before {
+  content: counter(how);
+  grid-row: 1 / span 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--stamp);
+  color: var(--stamp);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.how b {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+}
+.how li span {
+  font-size: 14px;
+  color: var(--ink-2);
 }
 
 /* ---------- App shell ---------- */
