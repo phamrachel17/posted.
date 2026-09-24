@@ -11,9 +11,9 @@ import type { Member, NotebookRef, Post, Us } from "@/lib/types";
 
 const HOUR = 3_600_000;
 
-const photo = (a: string, b: string, c: string) =>
+const photo = (a: string, b: string, c: string, portrait = false) =>
   `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".6" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient></defs><rect width="800" height="560" fill="url(#g)"/><circle cx="260" cy="250" r="70" fill="#E79A4B"/><circle cx="420" cy="310" r="64" fill="#DB8540"/><circle cx="560" cy="230" r="58" fill="#E9A659"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560"${portrait ? ' width="560" height="800" preserveAspectRatio="xMidYMid slice"' : ""}><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".6" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient></defs><rect width="800" height="560" fill="url(#g)"/><circle cx="260" cy="250" r="70" fill="#E79A4B"/><circle cx="420" cy="310" r="64" fill="#DB8540"/><circle cx="560" cy="230" r="58" fill="#E9A659"/></svg>`,
   )}`;
 
 const peaks = (seed: number) =>
@@ -70,7 +70,7 @@ export default function PreviewPage() {
     }),
     post("p4", me, 24, {
       kind: "photo", body: "First persimmons at the market. Saving you the ugliest one.",
-      photos: [{ id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A"), width: 800, height: 560 }],
+      photos: [{ id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 560, height: 800 }],
       reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
       latestReply: { author_id: "arya", body: "The ugliest one is the best one.", hasAudio: false },
       kept: true,

@@ -558,7 +558,7 @@ img {
   background: transparent;
   resize: none;
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1.5;
   min-height: 34px;
   field-sizing: content;
@@ -677,7 +677,7 @@ img {
 }
 .post-body {
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -704,10 +704,15 @@ img {
   aspect-ratio: 1;
   object-fit: cover;
 }
+/* A single photo keeps its own shape, capped in height, instead of filling the card. */
 .photos.n1 img {
+  width: auto;
+  max-width: 100%;
   height: auto;
-  max-height: 560px;
-  object-fit: cover;
+  max-height: 380px;
+}
+.photos:not(.n1) {
+  max-width: 440px;
 }
 .photo-missing {
   aspect-ratio: 4 / 3;
@@ -1333,7 +1338,7 @@ button.chip:hover {
 }
 .reply-preview span {
   font-family: var(--serif);
-  font-size: 16.5px;
+  font-size: 15.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1418,7 +1423,7 @@ button.chip:hover {
 }
 .day-fields dd {
   font-family: var(--serif);
-  font-size: 18.5px;
+  font-size: 16.5px;
   line-height: 1.45;
 }
 .lesson-summary {
@@ -1578,7 +1583,7 @@ button.chip:hover {
   color: var(--ink);
 }
 .card-detail .post-body {
-  font-size: 21px;
+  font-size: 18px;
 }
 .postmark.big .postmark-ring {
   width: 84px;
@@ -1617,7 +1622,7 @@ button.chip:hover {
   padding-right: 0;
 }
 .note-body {
-  font-size: 17.5px;
+  font-size: 16px;
 }
 .write-back {
   display: flex;
@@ -2211,7 +2216,10 @@ button.chip:hover {
     padding: 16px 16px 12px;
   }
   .post-body {
-    font-size: 17px;
+    font-size: 16px;
+  }
+  .photos.n1 img {
+    max-height: 300px;
   }
   .postmark-ring {
     width: 54px;
