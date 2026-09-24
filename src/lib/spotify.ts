@@ -5,7 +5,7 @@ import "server-only";
 
 export type SpotifyKind = "track" | "album" | "playlist";
 export type SpotifyRef = { kind: SpotifyKind; id: string };
-export type SpotifyMeta = { title: string; artist: string | null; image: string | null };
+export type SpotifyMeta = { title: string; artist: string | null; image: string | null; preview: string | null };
 
 /** Accepts open.spotify.com links (with or without /intl-xx/ and ?si=…) and spotify:track:… URIs. */
 export function parseSpotify(input: string): SpotifyRef | null {
@@ -50,7 +50,13 @@ export async function spotifyMeta(ref: SpotifyRef): Promise<SpotifyMeta | null> 
         const image = og("image");
         // Album and playlist pages title themselves "Name - Album by Artist | Spotify".
         const clean = decode(title).replace(/\s+-\s+(Album|Single|EP|Playlist|Compilation) by .*$/i, "").replace(/\s*\|\s*Spotify$/, "");
-        return { title: clean, artist, image: image?.startsWith("https://i.scdn.co/") ? image : null };
+        const audio = og("audio");
+        return {
+          title: clean,
+          artist,
+          image: image?.startsWith("https://i.scdn.co/") ? image : null,
+          preview: audio?.startsWith("https://p.scdn.co/") ? audio : null,
+        };
       }
     }
   } catch {
@@ -61,7 +67,7 @@ export async function spotifyMeta(ref: SpotifyRef): Promise<SpotifyMeta | null> 
     if (!res.ok) return null;
     const data = (await res.json()) as { title?: string; thumbnail_url?: string };
     if (!data.title) return null;
-    return { title: data.title, artist: null, image: data.thumbnail_url?.startsWith("https://i.scdn.co/") ? data.thumbnail_url : null };
+    return { title: data.title, artist: null, image: data.thumbnail_url?.startsWith("https://i.scdn.co/") ? data.thumbnail_url : null, preview: null };
   } catch {
     return null;
   }

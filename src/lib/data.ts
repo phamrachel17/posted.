@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
 import { dayKey } from "./time";
+import { spotifyMeta } from "./spotify";
 import type {
   Audio,
   LessonMeta,
@@ -452,17 +453,28 @@ export type Song = {
   image: string | null;
   set_by: string;
   created_at: string;
+  /** Spotify's 30-second preview, when there is one. */
+  preview: string | null;
 };
+
+const SONG_COLUMNS = "id, kind, spotify_id, title, artist, image, set_by, created_at";
 
 /** What's on the record player now, plus the few before it. `missing` if the migration hasn't run. */
 export async function getJukebox(): Promise<{ missing: boolean; current: Song | null; earlier: Song[] }> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("jukebox_songs")
-    .select("id, kind, spotify_id, title, artist, image, set_by, created_at")
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const query = (columns: string) =>
+    supabase.from("jukebox_songs").select(columns).order("created_at", { ascending: false }).limit(6);
+
+  let { data, error } = await query(`${SONG_COLUMNS}, preview`);
+  // Before the preview migration runs, load songs without it.
+  if (error && /preview/.test(error.message)) ({ data, error } = await query(SONG_COLUMNS));
   if (error) return { missing: true, current: null, earlier: [] };
-  const songs = data as Song[];
-  return { missing: false, current: songs[0] ?? null, earlier: songs.slice(1) };
+
+  const songs = (data as unknown as Song[]).map((s) => ({ ...s, preview: s.preview ?? null }));
+  const current = songs[0] ?? null;
+  // Songs put on before previews were saved: look the preview up now.
+  if (current && !current.preview && current.kind === "track") {
+    current.preview = (await spotifyMeta({ kind: "track", id: current.spotify_id }))?.preview ?? null;
+  }
+  return { missing: false, current, earlier: songs.slice(1) };
 }

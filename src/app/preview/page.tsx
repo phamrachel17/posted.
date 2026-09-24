@@ -110,9 +110,10 @@ export default function PreviewPage() {
             current: {
               id: "j1", kind: "track", spotify_id: "4cOdK2wGLETKBW3PvgPWqT", title: "Never Gonna Give You Up", artist: "Rick Astley",
               image: "https://i.scdn.co/image/ab67616d0000b273baf89eb11ec7c657805d2da0", set_by: "arya", created_at: new Date(now.getTime() - 20 * HOUR).toISOString(),
+              preview: "https://p.scdn.co/mp3-preview/b4c682084c3fd05538726d0a126b7e14b6e92c83",
             },
             earlier: [
-              { id: "j2", kind: "track", spotify_id: "4cOdK2wGLETKBW3PvgPWqT", title: "Harvest Moon", artist: "Neil Young", image: null, set_by: "rachel", created_at: now.toISOString() },
+              { id: "j2", kind: "track", spotify_id: "4cOdK2wGLETKBW3PvgPWqT", title: "Harvest Moon", artist: "Neil Young", image: null, set_by: "rachel", created_at: now.toISOString(), preview: null },
             ],
           }}
         />

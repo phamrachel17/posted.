@@ -2905,7 +2905,10 @@ button.chip:hover {
   pointer-events: none;
 }
 .vinyl.is-on {
-  animation: spin 5s linear infinite;
+  animation: spin 9s linear infinite;
+}
+.vinyl.is-playing {
+  animation-duration: 2.4s;
 }
 .vinyl:hover {
   animation-play-state: paused;
@@ -2953,10 +2956,15 @@ button.chip:hover {
   height: 34px;
   border-radius: 2px;
   background: linear-gradient(#b9b9b0, #8d8d86);
-  transform: rotate(28deg);
+  transform: rotate(8deg);
   transform-origin: top center;
+  transition: transform 500ms ease;
   z-index: 1;
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.jukebox-top.is-playing::before {
+  transform: rotate(32deg);
 }
 .jukebox-top::after {
   content: "";
@@ -2969,6 +2977,7 @@ button.chip:hover {
   background: #a9a9a1;
   box-shadow: inset 0 0 0 3px #d9d9d2;
   z-index: 1;
+  pointer-events: none;
 }
 .jukebox-now {
   display: flex;
@@ -2984,6 +2993,11 @@ button.chip:hover {
   color: var(--ink);
   text-decoration: none;
   overflow-wrap: anywhere;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
 }
 .jukebox-title:hover {
   text-decoration: underline;
@@ -2993,10 +3007,68 @@ button.chip:hover {
   font-size: 13.5px;
   color: var(--ink-2);
 }
-.jukebox-player {
-  width: 100%;
+.jukebox-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.jukebox-embed {
+  max-height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  transition: max-height 250ms ease;
+}
+.jukebox-embed.is-shown {
+  max-height: 90px;
+}
+.jukebox-embed iframe {
+  display: block;
   border: 0;
   border-radius: 12px;
+}
+.jukebox-signin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 13.5px;
+}
+.jukebox-signin .btn {
+  align-self: flex-start;
+}
+.jukebox-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.jukebox-progress i {
+  display: block;
+  height: 100%;
+  background: var(--stamp);
+  transition: width 250ms linear;
+}
+/* A hand-drawn record replaces the grooves drawn in code. */
+.vinyl.is-drawn {
+  background: none;
+  box-shadow: none;
+}
+.vinyl.is-drawn::after {
+  display: none;
+}
+.vinyl-drawing {
+  position: absolute;
+  inset: 0;
+  background-color: #1c1c1c;
+  -webkit-mask: var(--doodle) center / contain no-repeat;
+  mask: var(--doodle) center / contain no-repeat;
+}
+.vinyl.is-drawn .vinyl-label {
+  position: relative;
+  z-index: 1;
 }
 .jukebox-change {
   display: flex;
@@ -3049,15 +3121,20 @@ button.chip:hover {
   justify-content: space-between;
   gap: 8px;
 }
-.jukebox-earlier a {
+.jukebox-earlier li button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
   color: var(--ink);
-  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.jukebox-earlier a:hover {
+.jukebox-earlier li button:hover {
   text-decoration: underline;
 }
 @media (prefers-reduced-motion: reduce) {
