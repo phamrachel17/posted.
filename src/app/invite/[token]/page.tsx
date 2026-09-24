@@ -40,12 +40,12 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
         </div>
         <p className="solo-lede">
           {invite.inviter_name} made a private place for the two of you.
-          {signedIn ? " A little about you, and you're in." : " Sign in with your email to join."}
+          {signedIn ? " A little about you, and you're in." : " Create a password to join."}
         </p>
         {signedIn ? (
           <JoinForm token={token} takenInk={invite.taken_ink} />
         ) : (
-          <LoginForm next={`/invite/${token}`} />
+          <LoginForm next={`/invite/${token}`} newcomer />
         )}
       </div>
     </main>

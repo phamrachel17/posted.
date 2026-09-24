@@ -7,6 +7,14 @@ const PUBLIC_PATHS = ["/login", "/auth", "/invite", "/setup", "/preview", "/api/
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
+  // Stray punctuation pasted onto an address ("/login," or "/invite/abc.") becomes a 404.
+  // Trim it and keep everything else, including any sign-in code.
+  if (pathname !== "/" && /[,.;:!)\]'"]+$/.test(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/[,.;:!)\]'"]+$/, "") || "/";
+    return NextResponse.redirect(url);
+  }
+
   // A sign-in code that landed somewhere other than the callback (for example the
   // Site URL, when the redirect address wasn't on Supabase's allow-list). Send it on.
   if (!pathname.startsWith("/auth/") && (searchParams.has("code") || searchParams.has("error_code"))) {

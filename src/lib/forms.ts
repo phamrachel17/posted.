@@ -26,5 +26,9 @@ export function friendlyError(error: { message: string; code?: string }): string
 
 /** Only allow redirects within this site. */
 export function safeNext(value: unknown, fallback = "/"): string {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return fallback;
+  // Never send someone back to a sign-in page after signing in.
+  const path = value.replace(/[,.;:!)\]'"]+$/, "");
+  if (path === "/login" || path.startsWith("/auth/")) return fallback;
+  return path || fallback;
 }

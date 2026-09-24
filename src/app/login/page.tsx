@@ -1,8 +1,13 @@
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/LoginForm";
+import { getUserId } from "@/lib/data";
+import { safeNext } from "@/lib/forms";
 import { Doodle } from "@/components/Doodle";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { next, error } = await searchParams;
+  // Already signed in: skip the form.
+  if (await getUserId()) redirect(safeNext(next));
 
   return (
     <main className="solo">
@@ -11,7 +16,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <Doodle name="logo" size={180} height={138} />
           <div className="wordmark">posted<span>.</span></div>
         </div>
-        <p className="solo-lede">A private place for two. Sign in with your email and we&rsquo;ll send you a link.</p>
+        <p className="solo-lede">A private place for two.</p>
         {error && (
           <p className="error-note">
             <b>That sign-in link didn&rsquo;t work.</b>

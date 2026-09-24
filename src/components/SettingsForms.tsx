@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { setPassword } from "@/app/actions/auth";
 import { createInvite, updateLetter, updateProfile, updateVisit } from "@/app/actions/space";
 import type { FormState } from "@/lib/forms";
 import type { Ink } from "@/lib/inks";
@@ -109,6 +110,23 @@ export function LetterForm({ hour, partnerName }: { hour: number | null; partner
       </div>
       <div className="settings-actions">
         <SubmitButton pendingText="Saving…">Save</SubmitButton>
+        <Result state={state} />
+      </div>
+    </form>
+  );
+}
+
+export function PasswordForm() {
+  const [state, action] = useActionState<FormState, FormData>(setPassword, {});
+  return (
+    <form action={action} className="form" key={state.ok ? "saved" : "editing"}>
+      <div className="field">
+        <label className="label" htmlFor="new-password">Password</label>
+        <input id="new-password" name="password" type="password" minLength={8} required autoComplete="new-password" />
+        <span className="hint">Set or change the password you sign in with. At least 8 characters.</span>
+      </div>
+      <div className="settings-actions">
+        <SubmitButton pendingText="Saving…">Save password</SubmitButton>
         <Result state={state} />
       </div>
     </form>

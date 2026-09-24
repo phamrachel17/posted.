@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { getUs } from "@/lib/data";
 import { signOut } from "@/app/actions/auth";
-import { InviteBox, LetterForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
+import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
 
 async function origin() {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
@@ -56,6 +56,11 @@ export default async function SettingsPage() {
         <div>
           <a href="/api/export" className="btn" download>Download a copy</a>
         </div>
+      </section>
+
+      <section aria-labelledby="password-title">
+        <h2 id="password-title" className="label">Signing in</h2>
+        <PasswordForm />
       </section>
 
       <section aria-labelledby="account">
