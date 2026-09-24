@@ -34,7 +34,7 @@ export function TodayView({ us, posts, now, lesson, olderHref, older, startRecor
           <h1 className="date">{older ? "Before this" : today.date}</h1>
         </header>
 
-        {!older && <Composer spaceId={us.space.id} preview={preview} startRecording={startRecording} />}
+        {!older && <Composer spaceId={us.space.id} preview={preview} startRecording={startRecording} timeZone={me.timezone} />}
 
         {posts.length === 0 && !older && (
           <div className="empty">

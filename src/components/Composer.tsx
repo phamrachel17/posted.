@@ -5,11 +5,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPost } from "@/app/actions/posts";
 import { removeUpload, uploadPhoto } from "@/lib/upload";
 import { PhotoError } from "@/lib/images";
-import { DAY_PROMPTS, MOODS } from "@/lib/day";
 import { RECORD_EVENT } from "@/lib/events";
 import type { DayMeta, NotebookRef } from "@/lib/types";
 import type { NewPhoto } from "@/app/actions/posts";
 import { Doodle } from "./Doodle";
+import { DayFields, dayBounds } from "./DayFields";
 import { VoiceRecorder } from "./VoiceRecorder";
 
 const MAX_PHOTOS = 6;
@@ -39,9 +39,11 @@ type Props = {
   preview?: boolean;
   /** Start in voice mode and record right away (from the mobile mic button). */
   startRecording?: boolean;
+  /** Your time zone, for picking which day a My day is for. */
+  timeZone?: string;
 };
 
-export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording }: Props) {
+export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone }: Props) {
   const draftKey = `posted:draft:${fixedNotebook ?? "today"}`;
   const [mode, setMode] = useState<Mode>(startRecording ? "voice" : "write");
   const [autoStart, setAutoStart] = useState(Boolean(startRecording));
@@ -49,7 +51,8 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const [photos, setPhotos] = useState<Attached[]>([]);
   const [notebookId, setNotebookId] = useState<string>("");
   const [day, setDay] = useState<Partial<DayMeta>>({});
-  const [openPrompts, setOpenPrompts] = useState<string[]>([]);
+  const zone = timeZone ?? "UTC";
+  const [dayDate, setDayDate] = useState(() => dayBounds(zone).today);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -145,7 +148,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
     startTransition(async () => {
       const result =
         mode === "day"
-          ? await createPost({ body: "", notebookId: null, day: day as DayMeta })
+          ? await createPost({ body: "", notebookId: null, day: day as DayMeta, dayDate })
           : await createPost({ body, notebookId: target, photos: ready });
       if (result.error) {
         setError(result.error);
@@ -153,7 +156,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
       }
       if (mode === "day") {
         setDay({});
-        setOpenPrompts([]);
+        setDayDate(dayBounds(zone).today);
         setMode("write");
       } else {
         photos.forEach((p) => URL.revokeObjectURL(p.preview));
@@ -201,60 +204,11 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
           <b>My day</b>
           <span className="hint">Only the mood is needed</span>
         </div>
-        <div className="weather-pick mood-pick" role="radiogroup" aria-label="Mood">
-          {MOODS.map((w) => (
-            <button
-              key={w.id}
-              type="button"
-              role="radio"
-              aria-checked={day.mood === w.id}
-              aria-label={w.label}
-              title={w.label}
-              onClick={() => setDay((d) => ({ ...d, mood: w.id }))}
-            >
-              <Doodle name={`mood-${w.id}`} size={30} />
-              <span className="mood-name">{w.label}</span>
-            </button>
-          ))}
-        </div>
-        <div className="energy-pick" role="radiogroup" aria-label="Energy">
-          <span>Energy</span>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              role="radio"
-              aria-checked={day.energy === n}
-              aria-label={`${n} of 5`}
-              className={day.energy && n <= day.energy ? "on" : undefined}
-              onClick={() => setDay((d) => ({ ...d, energy: d.energy === n ? undefined : n }))}
-            />
-          ))}
-        </div>
-        {DAY_PROMPTS.filter((p) => openPrompts.includes(p.key)).map((p) => (
-          <div className="field" key={p.key}>
-            <label className="label" htmlFor={`day-${p.key}`}>{p.label}</label>
-            <input
-              id={`day-${p.key}`}
-              type="text"
-              maxLength={1000}
-              autoFocus
-              value={(day[p.key] as string) ?? ""}
-              onChange={(e) => setDay((d) => ({ ...d, [p.key]: e.target.value }))}
-            />
-          </div>
-        ))}
-        <div className="chips">
-          {DAY_PROMPTS.filter((p) => !openPrompts.includes(p.key)).map((p) => (
-            <button key={p.key} type="button" className="chip" onClick={() => setOpenPrompts((o) => [...o, p.key])}>
-              + {p.label}
-            </button>
-          ))}
-        </div>
+        <DayFields value={day} onChange={setDay} date={dayDate} onDate={setDayDate} timeZone={zone} />
         {error && <p className="error-note"><b>{error}</b></p>}
         <div className="composer-row">
           <button type="button" className="composer-tool" onClick={() => setMode("write")}>Cancel</button>
-          <span className="hint composer-day-where">Posts to Today</span>
+          <span className="hint composer-day-where">{dayDate === dayBounds(zone).today ? "Posts to Today" : "Added to that day"}</span>
           <button type="submit" className="btn btn-primary" disabled={!canPost}>{pending ? "Posting…" : "Post"}</button>
         </div>
       </form>

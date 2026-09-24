@@ -50,12 +50,19 @@ export type EmbedState = {
   progress: number;
   /** True once Spotify reports a ~30s length, meaning this browser isn't signed in. */
   previewOnly: boolean;
+  /** Spotify stopped by itself partway through (another device took over, or the account can't play here). */
+  stalled: boolean;
+  /** Seconds in when it stopped, so a fallback can pick up from there. */
+  stalledAt: number;
 };
 
 export function useSpotifyEmbed(uri: string | null, enabled: boolean) {
   const holder = useRef<HTMLDivElement>(null);
   const controller = useRef<Controller | null>(null);
-  const [state, setState] = useState<EmbedState>({ ready: false, failed: false, playing: false, progress: 0, previewOnly: false });
+  const [state, setState] = useState<EmbedState>({ ready: false, failed: false, playing: false, progress: 0, previewOnly: false, stalled: false, stalledAt: 0 });
+  // When we asked Spotify to pause; a pause we didn't ask for means it stopped on its own.
+  const pausedByUs = useRef(0);
+  const wasPlaying = useRef(false);
 
   // Create the player once.
   useEffect(() => {
@@ -69,12 +76,17 @@ export function useSpotifyEmbed(uri: string | null, enabled: boolean) {
           if (cancelled) return c.destroy();
           controller.current = c;
           c.addListener("playback_update", (e) => {
-            const { isPaused, duration, position } = e.data;
+            const { isPaused, isBuffering, duration, position } = e.data;
+            const stoppedOnItsOwn =
+              wasPlaying.current && isPaused && !isBuffering && Date.now() - pausedByUs.current > 1500 && duration > 0 && position < duration - 2000;
+            wasPlaying.current = !isPaused;
             setState((s) => ({
               ...s,
               playing: !isPaused,
               progress: duration ? position / duration : 0,
               previewOnly: duration > 0 && duration <= PREVIEW_MS,
+              stalled: s.stalled || stoppedOnItsOwn,
+              stalledAt: stoppedOnItsOwn ? position / 1000 : s.stalledAt,
             }));
           });
           setState((s) => ({ ...s, ready: true }));
@@ -94,14 +106,20 @@ export function useSpotifyEmbed(uri: string | null, enabled: boolean) {
   useEffect(() => {
     if (uri && controller.current) {
       controller.current.loadUri(uri);
-      setState((s) => ({ ...s, playing: false, progress: 0, previewOnly: false }));
+      setState((s) => ({ ...s, playing: false, progress: 0, previewOnly: false, stalled: false, stalledAt: 0 }));
     }
   }, [uri]);
 
   return {
     holder,
     state,
-    toggle: () => controller.current?.togglePlay(),
-    pause: () => controller.current?.pause(),
+    toggle: () => {
+      if (wasPlaying.current) pausedByUs.current = Date.now();
+      controller.current?.togglePlay();
+    },
+    pause: () => {
+      pausedByUs.current = Date.now();
+      controller.current?.pause();
+    },
   };
 }

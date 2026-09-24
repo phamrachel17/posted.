@@ -60,7 +60,8 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
     toggle: embedToggle,
     pause: embedPause,
   } = useSpotifyEmbed(current ? `spotify:${current.kind}:${current.spotify_id}` : null, !preview);
-  const useEmbed = !preview && embedState.ready && !embedState.failed;
+  // If Spotify's player stops by itself, the record carries on with its own preview.
+  const useEmbed = !preview && embedState.ready && !embedState.failed && !embedState.stalled;
   const playing = useEmbed ? embedState.playing : audioPlaying;
   const progress = useEmbed ? embedState.progress : audioProgress;
   const [changing, setChanging] = useState(false);
@@ -106,6 +107,16 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
       setError("The preview couldn't play here. Tap the song name to open it in Spotify.");
     }
   }
+
+  // Spotify stopped on its own: pick up with the preview from about the same spot.
+  const stalled = embedState.stalled;
+  const stalledAt = embedState.stalledAt;
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!stalled || !el) return;
+    el.currentTime = Math.min(stalledAt, 25);
+    el.play().catch(() => {});
+  }, [stalled, stalledAt]);
 
   // Stop if a voice memo starts.
   useEffect(() => {
@@ -161,8 +172,15 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
         </div>
       )}
 
-      {/* Spotify's own player. It stays tucked away until the first play. */}
-      {!preview && <div ref={embedHolder} className={shown ? "jukebox-embed is-shown" : "jukebox-embed"} />}
+      {/* Spotify's own player. It stays tucked away until the first play, and hides again if it stalls. */}
+      {!preview && <div ref={embedHolder} className={shown && !stalled ? "jukebox-embed is-shown" : "jukebox-embed"} />}
+
+      {stalled && (
+        <p className="hint jukebox-note">
+          Spotify stopped playing here. That usually means Spotify is playing on another of your devices, or the account
+          can&rsquo;t play full songs inside other websites (that needs Premium). Playing the 30-second preview instead.
+        </p>
+      )}
 
       {useEmbed && embedState.previewOnly && (
         <div className="jukebox-signin">

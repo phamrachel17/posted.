@@ -60,6 +60,8 @@ export async function createPost(input: {
   photos?: NewPhoto[];
   audio?: NewAudio | null;
   day?: DayMeta | null;
+  /** For a My day: which day it's about ("YYYY-MM-DD"). The database only honors recent past days. */
+  dayDate?: string;
 }): Promise<Result> {
   const us = await getUs();
   if (!us) return { error: "Sign in again to post." };
@@ -87,13 +89,27 @@ export async function createPost(input: {
     p_kind: kind,
     p_body: body,
     p_notebook_id: input.notebookId || null,
-    p_meta: day ?? {},
+    p_meta: day ? { ...day, ...(input.dayDate && /^\d{4}-\d{2}-\d{2}$/.test(input.dayDate) ? { day: input.dayDate } : {}) } : {},
     p_media: media,
   });
   if (error) return { error: "Your post didn't go through. It's still here, so try again." };
 
   refresh();
   return { id: data as string };
+}
+
+export async function updateDay(postId: string, meta: DayMeta, dayDate: string): Promise<Result> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again to edit." };
+  const day = cleanDay(meta);
+  if (!day) return { error: "Pick a mood for your day." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayDate)) return { error: "Pick which day this is for." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_day", { p_post_id: postId, p_meta: day, p_day: dayDate });
+  if (error) return { error: error.code === "P0001" ? error.message : "Your changes didn't save. Try again." };
+  refresh();
+  return {};
 }
 
 export async function updatePostBody(id: string, body: string): Promise<Result> {

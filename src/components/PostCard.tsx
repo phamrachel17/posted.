@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element -- photos come from short-lived signed URLs */
 import Link from "next/link";
 import { inkStyle } from "@/lib/inks";
-import { dayAnswers, dayFeeling } from "@/lib/day";
 import type { People } from "@/lib/people";
 import { exactTime, longDate, spokenTime } from "@/lib/time";
 import type { DayMeta, LessonMeta, Post } from "@/lib/types";
 import { CardFooter } from "./CardFooter";
+import { DayCard } from "./DayCard";
 import { Doodle } from "./Doodle";
 import { NotebookMark } from "./NotebookMark";
 import { PostBody } from "./PostBody";
@@ -29,39 +29,6 @@ type Props = {
 
 const NEW_STAMP_MS = 20_000;
 
-function DayBody({ meta, authorId }: { meta: DayMeta; authorId: string }) {
-  const feeling = dayFeeling(meta);
-  const answers = dayAnswers(meta);
-  return (
-    <div className="day-card">
-      <div className="day-top">
-        {feeling && (
-          <div className="weather">
-            <Doodle name={feeling.doodle} size={34} />
-            <b>{feeling.label}</b>
-          </div>
-        )}
-        {meta.energy && (
-          <div className="energy" aria-label={`Energy ${meta.energy} of 5`} data-author={authorId}>
-            energy
-            {[1, 2, 3, 4, 5].map((n) => <i key={n} className={n <= meta.energy! ? "on" : undefined} />)}
-          </div>
-        )}
-      </div>
-      {answers.length > 0 && (
-        <dl className="day-fields">
-          {answers.map((a) => (
-            <div key={a.key}>
-              <dt>{a.label}</dt>
-              <dd>{a.text}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </div>
-  );
-}
-
 function LessonBody({ meta, post }: { meta: LessonMeta; post: Post }) {
   const href = post.notebook ? `/n/${post.notebook.slug}/lessons/${meta.n}` : `/p/${post.id}`;
   return (
@@ -84,7 +51,7 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
   const isNew = isMine && now.getTime() - new Date(post.created_at).getTime() < NEW_STAMP_MS;
   const n = post.photos.length;
   const replier = post.latestReply ? people.byId[post.latestReply.author_id] : null;
-  const canEdit = post.kind !== "day" && post.kind !== "lesson";
+  const canEdit = post.kind !== "lesson";
   const partnerId = Object.keys(people.byId).find((id) => id !== people.meId);
   const partnerName = partnerId ? people.byId[partnerId].name : undefined;
 
@@ -96,6 +63,7 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
           {spokenTime(post.created_at, post.postmark.local, viewerTz, now)}
         </time>
         {post.kind === "day" && <span>· My day</span>}
+        {post.kind === "day" && (post.meta as { added_at?: string }).added_at && <span>· added later</span>}
         {post.notebook && !hideNotebook && (
           <Link href={`/n/${post.notebook.slug}`} className="nb-label">
             · in <NotebookMark doodle={post.notebook.doodle} size={15} /> {post.notebook.name}
@@ -104,7 +72,15 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
         {post.edited_at && post.kind !== "lesson" && <span>· edited</span>}
       </header>
 
-      {post.kind === "day" && <DayBody meta={post.meta as unknown as DayMeta} authorId={post.author_id} />}
+      {post.kind === "day" && (
+        <DayCard
+          postId={post.id}
+          meta={post.meta as unknown as DayMeta}
+          authorId={post.author_id}
+          date={post.postmark.local.slice(0, 10)}
+          timeZone={author?.timezone ?? viewerTz}
+        />
+      )}
       {post.kind === "lesson" && <LessonBody meta={post.meta as unknown as LessonMeta} post={post} />}
 
       {n > 0 && (
