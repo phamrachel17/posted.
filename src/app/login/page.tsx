@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <div className="wordmark">posted<span>.</span></div>
         </div>
         <p className="solo-lede">
-          A private place for two people to leave pieces of their day for each other.
+          A private space for you to leave a piece of your day.
         </p>
         {error && (
           <p className="error-note">

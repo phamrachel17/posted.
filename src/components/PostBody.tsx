@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { updatePostBody } from "@/app/actions/posts";
+import { updatePostBody, updateReplyBody } from "@/app/actions/posts";
 import { EDIT_EVENT } from "./PostMenu";
 
-/** Post text, which its author can edit in place from the "..." menu. */
-export function PostBody({ postId, body }: { postId: string; body: string | null }) {
+type Props = {
+  postId: string;
+  body: string | null;
+  kind?: "post" | "reply";
+  className?: string;
+};
+
+/** Post or note text, which its author can edit in place from the "..." menu. */
+export function PostBody({ postId, body, kind = "post", className = "post-body" }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(body ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +28,7 @@ export function PostBody({ postId, body }: { postId: string; body: string | null
     return () => window.removeEventListener(EDIT_EVENT, onEdit);
   }, [postId, body]);
 
-  if (!editing) return body ? <p className="post-body">{body}</p> : null;
+  if (!editing) return body ? <p className={className}>{body}</p> : null;
 
   return (
     <form
@@ -29,7 +36,7 @@ export function PostBody({ postId, body }: { postId: string; body: string | null
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
-          const result = await updatePostBody(postId, draft);
+          const result = kind === "reply" ? await updateReplyBody(postId, draft) : await updatePostBody(postId, draft);
           if (result.error) setError(result.error);
           else setEditing(false);
         });

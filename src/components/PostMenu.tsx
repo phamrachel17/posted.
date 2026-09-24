@@ -1,15 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { deletePost, setKept } from "@/app/actions/posts";
+import { deletePost, deleteReply, setInScrapbook, setKept } from "@/app/actions/posts";
 import { Doodle } from "./Doodle";
 
 export const EDIT_EVENT = "posted:edit";
 
-type Props = { postId: string; isMine: boolean; kept: boolean; canEdit: boolean; leaveOnDelete?: boolean };
+type Props = {
+  postId: string;
+  isMine: boolean;
+  kept: boolean;
+  canEdit: boolean;
+  leaveOnDelete?: boolean;
+  /** A reply (note) instead of a post: no Keep, and Delete removes the note. */
+  kind?: "post" | "reply";
+  inScrapbook?: boolean;
+};
 
-/** The "..." on a card: Keep for everyone, Edit and Delete on your own posts. */
-export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete }: Props) {
+/** The "..." on a card or note: Keep for everyone, Edit and Delete on your own. */
+export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete, kind = "post", inScrapbook = false }: Props) {
+  const isReply = kind === "reply";
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [, startTransition] = useTransition();
@@ -44,10 +54,10 @@ export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete }: Props
       {open && (
         <div className="post-menu-panel" role="menu">
           {confirming ? (
-            <form action={deletePost} className="menu-confirm">
+            <form action={isReply ? deleteReply : deletePost} className="menu-confirm">
               <input type="hidden" name="id" value={postId} />
               {leaveOnDelete && <input type="hidden" name="leave" value="1" />}
-              <span>Delete this post? This can&rsquo;t be undone.</span>
+              <span>{isReply ? "Delete this note?" : "Delete this post?"} This can&rsquo;t be undone.</span>
               <div className="menu-confirm-actions">
                 <button type="button" className="btn btn-quiet" onClick={() => setConfirming(false)}>Keep it</button>
                 <button type="submit" className="btn btn-danger">Delete</button>
@@ -55,6 +65,7 @@ export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete }: Props
             </form>
           ) : (
             <>
+              {!isReply && (
               <button
                 type="button"
                 role="menuitem"
@@ -69,6 +80,23 @@ export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete }: Props
                 {kept ? "Unkeep" : "Keep"}
                 {!kept && <span className="hint">Only you will see it</span>}
               </button>
+              )}
+              {!isReply && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    startTransition(async () => {
+                      await setInScrapbook(postId, !inScrapbook);
+                    });
+                  }}
+                >
+                  <Doodle name="nav-scrapbook" size={16} />
+                  {inScrapbook ? "Remove from scrapbook" : "Add to scrapbook"}
+                  {!inScrapbook && <span className="hint">You&rsquo;ll both see it</span>}
+                </button>
+              )}
               {isMine && canEdit && (
                 <button
                   type="button"

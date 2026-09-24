@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deleteReply } from "@/app/actions/posts";
 import { getPost, getUs } from "@/lib/data";
 import { inkStyle } from "@/lib/inks";
 import { peopleOf } from "@/lib/people";
 import { exactTime, localStamp, spokenTime } from "@/lib/time";
 import { Doodle } from "@/components/Doodle";
+import { PostBody } from "@/components/PostBody";
 import { PostCard } from "@/components/PostCard";
+import { PostMenu } from "@/components/PostMenu";
 import { ReactionBar } from "@/components/ReactionBar";
 import { VoicePlayer } from "@/components/VoicePlayer";
 import { WriteBack } from "@/components/WriteBack";
@@ -44,24 +45,13 @@ export default async function PostPage({ params }: PageProps<"/p/[id]">) {
                     {spokenTime(reply.created_at, localStamp(new Date(reply.created_at), who?.timezone ?? us.me.timezone), us.me.timezone, now)}
                   </time>
                 </div>
-                {reply.body && <p className="post-body note-body">{reply.body}</p>}
+                <PostBody postId={reply.id} body={reply.body} kind="reply" className="post-body note-body" />
                 {reply.audio && (
                   <VoicePlayer id={reply.audio.id} url={reply.audio.url} durationMs={reply.audio.duration_ms} peaks={reply.audio.peaks} small />
                 )}
                 <div className="card-foot">
                   <ReactionBar target={{ replyId: reply.id }} reactions={reply.reactions} people={people} />
-                  {mine && (
-                    <details className="note-delete">
-                      <summary aria-label="Delete this note">
-                        <Doodle name="trash" size={15} />
-                      </summary>
-                      <form action={deleteReply}>
-                        <input type="hidden" name="id" value={reply.id} />
-                        <span>Delete this note?</span>
-                        <button type="submit" className="btn btn-danger">Delete</button>
-                      </form>
-                    </details>
-                  )}
+                  {mine && <PostMenu postId={reply.id} isMine kept={false} canEdit={Boolean(reply.body)} kind="reply" />}
                 </div>
               </li>
             );

@@ -1,0 +1,392 @@
+"use client";
+
+import { useEffect, useRef, useState, useTransition } from "react";
+import { addPiece, deletePiece, deleteScrapPage, renameScrapPage, updatePiece, type NewPiece } from "@/app/actions/scrapbook";
+import type { Piece } from "@/lib/data";
+import { PhotoError } from "@/lib/images";
+import { INK_IDS, INKS, type Ink } from "@/lib/inks";
+import { STICKERS } from "@/lib/stickers";
+import { uploadGif, uploadPhoto, uploadVideo } from "@/lib/upload";
+import { Doodle, doodleUrl } from "./Doodle";
+import { PieceContent, pieceStyle } from "./PieceContent";
+
+type Props = {
+  page: { id: string; title: string };
+  initialPieces: Piece[];
+  spaceId: string;
+  meId: string;
+  myInk: Ink;
+};
+
+type Drag = {
+  id: string;
+  mode: "move" | "resize" | "rotate";
+  startX: number;
+  startY: number;
+  orig: Piece;
+  rect: DOMRect;
+  center?: { x: number; y: number };
+};
+
+const jitter = (n: number) => (Math.random() - 0.5) * n;
+
+/** A free-form scrapbook page. Drag to move, pull the corner to resize, the top dot to turn. */
+export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: Props) {
+  const [pieces, setPieces] = useState<Piece[]>(initialPieces);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [title, setTitle] = useState(page.title);
+  const [tray, setTray] = useState<"none" | "stickers" | "caption">("none");
+  const [caption, setCaption] = useState("");
+  const [editingText, setEditingText] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(0);
+  const [error, setError] = useState<{ title: string; detail?: string } | null>(null);
+  const [soundOn, setSoundOn] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const drag = useRef<Drag | null>(null);
+
+  const sel = pieces.find((p) => p.id === selected) ?? null;
+  const topZ = () => pieces.reduce((m, p) => Math.max(m, p.z), 0) + 1;
+
+  function patchLocal(id: string, patch: Partial<Piece>) {
+    setPieces((list) => list.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+
+  function save(id: string, patch: Parameters<typeof updatePiece>[2]) {
+    startTransition(async () => {
+      const r = await updatePiece(page.id, id, patch);
+      if (r.error) setError({ title: r.error });
+    });
+  }
+
+  async function add(piece: NewPiece, local: Partial<Piece> = {}) {
+    const r = await addPiece(page.id, piece);
+    if (r.error || !r.id) {
+      setError({ title: r.error ?? "That didn't get added. Try again." });
+      return;
+    }
+    const full: Piece = {
+      id: r.id,
+      kind: piece.kind,
+      url: null,
+      width: piece.width ?? null,
+      height: piece.height ?? null,
+      duration_ms: piece.duration_ms ?? null,
+      sticker: piece.sticker ?? null,
+      body: piece.body ?? null,
+      color: piece.color ?? null,
+      x: piece.x,
+      y: piece.y,
+      w: piece.w,
+      rotation: piece.rotation,
+      z: piece.z,
+      created_by: meId,
+      ...local,
+    };
+    setPieces((list) => [...list, full]);
+    setSelected(r.id);
+  }
+
+  function placement(w: number): Pick<NewPiece, "x" | "y" | "w" | "rotation" | "z"> {
+    return { x: 50 - w / 2 + jitter(20), y: 15 + jitter(20), w, rotation: Math.round(jitter(8)), z: topZ() };
+  }
+
+  async function onFiles(files: FileList | null) {
+    if (!files) return;
+    setError(null);
+    for (const file of Array.from(files)) {
+      setUploading((n) => n + 1);
+      try {
+        const preview = URL.createObjectURL(file);
+        if (file.type.startsWith("video/") || /\.(mov|mp4|webm|m4v)$/i.test(file.name)) {
+          const v = await uploadVideo(spaceId, file);
+          await add({ kind: "video", ...v, ...placement(34) }, { url: preview });
+        } else if (file.type === "image/gif") {
+          const g = await uploadGif(spaceId, file);
+          await add({ kind: "gif", ...g, ...placement(28) }, { url: preview });
+        } else {
+          const p = await uploadPhoto(spaceId, file);
+          await add({ kind: "photo", path: p.path, mime: p.mime, width: p.width, height: p.height, ...placement(30) }, { url: preview });
+        }
+      } catch (err) {
+        setError(err instanceof PhotoError ? { title: err.message, detail: err.detail } : { title: `${file.name} didn't upload. Try again.` });
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function remove(id: string) {
+    setPieces((list) => list.filter((p) => p.id !== id));
+    setSelected(null);
+    startTransition(async () => {
+      await deletePiece(page.id, id);
+    });
+  }
+
+  // Dragging, resizing, turning.
+  function begin(e: React.PointerEvent, id: string, mode: Drag["mode"]) {
+    if (editingText) return;
+    e.stopPropagation();
+    const piece = pieces.find((p) => p.id === id);
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!piece || !rect) return;
+    setSelected(id);
+    let center;
+    if (mode === "rotate") {
+      const el = (e.currentTarget as HTMLElement).closest(".piece")!.getBoundingClientRect();
+      center = { x: el.left + el.width / 2, y: el.top + el.height / 2 };
+    }
+    drag.current = { id, mode, startX: e.clientX, startY: e.clientY, orig: piece, rect, center };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function move(e: React.PointerEvent) {
+    const d = drag.current;
+    if (!d) return;
+    const dx = ((e.clientX - d.startX) / d.rect.width) * 100;
+    const dy = ((e.clientY - d.startY) / d.rect.height) * 100;
+    if (d.mode === "move") patchLocal(d.id, { x: d.orig.x + dx, y: d.orig.y + dy });
+    if (d.mode === "resize") patchLocal(d.id, { w: Math.max(5, Math.min(100, d.orig.w + dx)) });
+    if (d.mode === "rotate" && d.center) {
+      const angle = (Math.atan2(e.clientY - d.center.y, e.clientX - d.center.x) * 180) / Math.PI + 90;
+      const snapped = Math.abs(angle) < 3 ? 0 : angle;
+      patchLocal(d.id, { rotation: Math.round(((snapped + 540) % 360) - 180) });
+    }
+  }
+
+  function end() {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    const now = pieces.find((p) => p.id === d.id);
+    if (!now) return;
+    if (d.mode === "move" && (now.x !== d.orig.x || now.y !== d.orig.y)) save(d.id, { x: now.x, y: now.y });
+    if (d.mode === "resize" && now.w !== d.orig.w) save(d.id, { w: now.w });
+    if (d.mode === "rotate" && now.rotation !== d.orig.rotation) save(d.id, { rotation: now.rotation });
+  }
+
+  // Arrow keys nudge; Delete removes.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!selected || editingText) return;
+      if ((e.target as HTMLElement).closest("input, textarea")) return;
+      const p = pieces.find((x) => x.id === selected);
+      if (!p) return;
+      const step = e.shiftKey ? 2 : 0.5;
+      const moves: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+      if (moves[e.key]) {
+        e.preventDefault();
+        const [dx, dy] = moves[e.key];
+        patchLocal(p.id, { x: p.x + dx, y: p.y + dy });
+        save(p.id, { x: p.x + dx, y: p.y + dy });
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        remove(p.id);
+      } else if (e.key === "Escape") {
+        setSelected(null);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const tilt = (by: number) => {
+    if (!sel) return;
+    const rotation = Math.max(-180, Math.min(180, sel.rotation + by));
+    patchLocal(sel.id, { rotation });
+    save(sel.id, { rotation });
+  };
+
+  return (
+    <div className="editor">
+      <div className="editor-head">
+        <input
+          className="editor-title"
+          value={title}
+          maxLength={80}
+          aria-label="Page title"
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={() => title !== page.title && startTransition(async () => void (await renameScrapPage(page.id, title)))}
+          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        />
+        <details className="nb-menu">
+          <summary aria-label="Page options">
+            <Doodle name="more" size={20} />
+          </summary>
+          <div className="post-menu-panel">
+            <form action={deleteScrapPage} className="menu-confirm">
+              <input type="hidden" name="id" value={page.id} />
+              <span>Delete this page and everything on it? This can&rsquo;t be undone.</span>
+              <button type="submit" className="btn btn-danger">Delete page</button>
+            </form>
+          </div>
+        </details>
+      </div>
+
+      <div className="editor-bar" role="toolbar" aria-label="Add to the page">
+        <button type="button" className="b-tool" onClick={() => fileRef.current?.click()}>
+          <Doodle name="camera" size={18} /> Photo, video, or GIF
+        </button>
+        <input ref={fileRef} type="file" hidden multiple accept="image/*,video/*,.heic,.heif,.gif,.mov" onChange={(e) => onFiles(e.target.files)} />
+        <button type="button" className="b-tool" aria-expanded={tray === "stickers"} onClick={() => setTray(tray === "stickers" ? "none" : "stickers")}>
+          <Doodle name="heart" size={18} /> Sticker
+        </button>
+        <button type="button" className="b-tool" aria-expanded={tray === "caption"} onClick={() => setTray(tray === "caption" ? "none" : "caption")}>
+          <Doodle name="pen" size={18} /> Handwritten note
+        </button>
+        {uploading > 0 && <span className="hint">Uploading{uploading > 1 ? ` ${uploading} files` : ""}…</span>}
+      </div>
+
+      {tray === "stickers" && (
+        <div className="sticker-tray">
+          {STICKERS.map((s) => (
+            <button
+              key={s.name}
+              type="button"
+              title={s.label}
+              aria-label={`Add ${s.label}`}
+              onClick={() => {
+                setTray("none");
+                add({ kind: "sticker", sticker: s.name, color: myInk, ...placement(s.aspect > 1.1 ? 22 : 13) });
+              }}
+            >
+              <span className="piece-sticker" style={{ "--doodle": `url(${doodleUrl(s.name)})`, aspectRatio: s.aspect } as React.CSSProperties} />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tray === "caption" && (
+        <form
+          className="caption-tray"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!caption.trim()) return;
+            add({ kind: "text", body: caption.trim(), color: myInk, ...placement(30) });
+            setCaption("");
+            setTray("none");
+          }}
+        >
+          <input value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={300} placeholder="Write something…" autoFocus aria-label="Note" />
+          <button type="submit" className="btn btn-primary" disabled={!caption.trim()}>Add</button>
+        </form>
+      )}
+
+      {error && (
+        <p className="error-note" role="alert">
+          <b>{error.title}</b>
+          {error.detail && <span>{error.detail}</span>}
+        </p>
+      )}
+
+      <div className="canvas-wrap">
+        <div
+          ref={canvasRef}
+          className="page-canvas"
+          onPointerDown={() => {
+            setSelected(null);
+            setEditingText(null);
+          }}
+          onPointerMove={move}
+          onPointerUp={end}
+          onPointerCancel={end}
+        >
+          {pieces.length === 0 && (
+            <p className="canvas-empty">
+              Add photos, short videos, GIFs, stickers, or a handwritten note, then drag them wherever you like.
+            </p>
+          )}
+          {pieces.map((p) => (
+            <div
+              key={p.id}
+              className={`piece kind-${p.kind}${p.id === selected ? " is-selected" : ""}`}
+              style={pieceStyle(p)}
+              onPointerDown={(e) => begin(e, p.id, "move")}
+              onDoubleClick={() => p.kind === "text" && setEditingText(p.id)}
+            >
+              {editingText === p.id ? (
+                <textarea
+                  className="piece-text piece-text-edit"
+                  defaultValue={p.body ?? ""}
+                  autoFocus
+                  maxLength={300}
+                  aria-label="Edit note"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onBlur={(e) => {
+                    const body = e.target.value.trim();
+                    setEditingText(null);
+                    if (!body) return remove(p.id);
+                    if (body !== p.body) {
+                      patchLocal(p.id, { body });
+                      save(p.id, { body });
+                    }
+                  }}
+                />
+              ) : (
+                <PieceContent piece={p} muted={soundOn !== p.id} />
+              )}
+              {p.id === selected && !editingText && (
+                <>
+                  <span className="h-rotate" aria-hidden onPointerDown={(e) => begin(e, p.id, "rotate")} />
+                  <span className="h-resize" aria-hidden onPointerDown={(e) => begin(e, p.id, "resize")} />
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {sel && (
+        <div className="piece-bar" role="toolbar" aria-label="Selected item">
+          <button type="button" className="b-tool" onClick={() => tilt(-5)}>↺ Tilt</button>
+          <button type="button" className="b-tool" onClick={() => tilt(5)}>Tilt ↻</button>
+          <button
+            type="button"
+            className="b-tool"
+            onClick={() => {
+              const z = topZ();
+              patchLocal(sel.id, { z });
+              save(sel.id, { z });
+            }}
+          >
+            Bring to front
+          </button>
+          {sel.kind === "text" && (
+            <button type="button" className="b-tool" onClick={() => setEditingText(sel.id)}>Edit words</button>
+          )}
+          {sel.kind === "video" && (
+            <button type="button" className="b-tool" onClick={() => setSoundOn(soundOn === sel.id ? null : sel.id)}>
+              {soundOn === sel.id ? "Sound off" : "Sound on"}
+            </button>
+          )}
+          {(sel.kind === "text" || sel.kind === "sticker") && (
+            <span className="ink-choices" role="group" aria-label="Color">
+              {INK_IDS.map((ink) => (
+                <button
+                  key={ink}
+                  type="button"
+                  aria-label={INKS[ink].label}
+                  aria-pressed={sel.color === ink}
+                  style={{ background: INKS[ink].color }}
+                  onClick={() => {
+                    patchLocal(sel.id, { color: ink });
+                    save(sel.id, { color: ink });
+                  }}
+                />
+              ))}
+            </span>
+          )}
+          <button type="button" className="b-tool danger" onClick={() => remove(sel.id)}>
+            <Doodle name="trash" size={16} /> Remove
+          </button>
+        </div>
+      )}
+      <p className="hint">
+        Drag to move. Pull the corner dot to resize and the top dot to turn. Double-click a note to change its words. Changes save as you go.
+      </p>
+    </div>
+  );
+}

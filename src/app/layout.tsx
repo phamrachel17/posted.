@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Alegreya, Be_Vietnam_Pro, Courier_Prime } from "next/font/google";
+import { Alegreya, Be_Vietnam_Pro, Courier_Prime, Nanum_Pen_Script } from "next/font/google";
 import "./globals.css";
 
 const alegreya = Alegreya({
@@ -21,6 +21,13 @@ const courier = Courier_Prime({
   weight: ["400", "700"],
 });
 
+// Handwriting for scrapbook captions. A stand-in until there's a font made from Rachel's handwriting.
+const hand = Nanum_Pen_Script({
+  variable: "--font-hand",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: "posted.",
   description: "A private place for two.",
@@ -34,7 +41,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${alegreya.variable} ${sans.variable} ${courier.variable}`}>
+    <html lang="en" className={`${alegreya.variable} ${sans.variable} ${courier.variable} ${hand.variable}`}>
       <body>{children}</body>
     </html>
   );

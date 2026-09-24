@@ -12,7 +12,6 @@ type Props = {
   us: Us;
   posts: Post[];
   now: Date;
-  notebooks: NotebookRef[];
   lesson?: (LessonSummary & { notebook: NotebookRef }) | null;
   olderHref?: string | null;
   /** Showing an older page: no composer, no "last here" line. */
@@ -21,7 +20,7 @@ type Props = {
   preview?: boolean;
 };
 
-export function TodayView({ us, posts, now, notebooks, lesson, olderHref, older, startRecording, preview }: Props) {
+export function TodayView({ us, posts, now, lesson, olderHref, older, startRecording, preview }: Props) {
   const { me, partner } = us;
   const todayKey = dayKey(now, me.timezone);
   const today = dayHeading(todayKey, todayKey);
@@ -34,7 +33,7 @@ export function TodayView({ us, posts, now, notebooks, lesson, olderHref, older,
           <h1 className="date">{older ? "Before this" : today.date}</h1>
         </header>
 
-        {!older && <Composer spaceId={us.space.id} notebooks={notebooks} preview={preview} startRecording={startRecording} />}
+        {!older && <Composer spaceId={us.space.id} preview={preview} startRecording={startRecording} />}
 
         {posts.length === 0 && !older && (
           <div className="empty">

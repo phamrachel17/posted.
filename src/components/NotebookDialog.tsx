@@ -13,9 +13,11 @@ type Props = {
   notebook?: Notebook;
   trigger: React.ReactNode;
   triggerClassName?: string;
+  /** Accessible name when the trigger is only an icon. */
+  triggerLabel?: string;
 };
 
-export function NotebookDialog({ notebook, trigger, triggerClassName }: Props) {
+export function NotebookDialog({ notebook, trigger, triggerClassName, triggerLabel }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const action = notebook ? updateNotebook.bind(null, notebook.id) : createNotebook;
   const [state, formAction] = useActionState<FormState, FormData>(action, {});
@@ -24,7 +26,7 @@ export function NotebookDialog({ notebook, trigger, triggerClassName }: Props) {
 
   return (
     <>
-      <button type="button" className={triggerClassName} onClick={() => ref.current?.showModal()}>
+      <button type="button" className={triggerClassName} aria-label={triggerLabel} title={triggerLabel} onClick={() => ref.current?.showModal()}>
         {trigger}
       </button>
       <dialog ref={ref} className="dialog" aria-labelledby="nb-dialog-title">

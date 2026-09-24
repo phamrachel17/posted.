@@ -147,6 +147,23 @@ export async function createReply(input: { postId: string; body: string; audio?:
   return { id: data as string };
 }
 
+export async function updateReplyBody(id: string, body: string): Promise<Result> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again to edit." };
+  if (body.length > 5000) return { error: "That's a long note. Try splitting it in two." };
+  if (!body.trim()) return { error: "A note can't be empty. Delete it instead." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("replies")
+    .update({ body: body.trim(), edited_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("author_id", us.me.id);
+  if (error) return { error: "Your edit didn't save. Try again." };
+  refresh();
+  return {};
+}
+
 export async function deleteReply(formData: FormData) {
   const us = await getUs();
   if (!us) return;
@@ -191,6 +208,33 @@ export async function setKept(postId: string, kept: boolean): Promise<Result> {
     : await supabase.from("keeps").delete().eq("member_id", us.me.id).eq("post_id", postId);
   if (error) return { error: "That didn't save. Try again." };
   refresh();
+  return {};
+}
+
+export async function setInScrapbook(postId: string, on: boolean): Promise<Result> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again." };
+  const supabase = await createClient();
+  const { error } = on
+    ? await supabase
+        .from("scrapbook_items")
+        .upsert({ space_id: us.space.id, post_id: postId, added_by: us.me.id }, { onConflict: "post_id", ignoreDuplicates: true })
+    : await supabase.from("scrapbook_items").delete().eq("post_id", postId);
+  if (error) return { error: "That didn't save. Try again." };
+  refresh();
+  return {};
+}
+
+export async function setScrapbookTitle(postId: string, title: string): Promise<Result> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("scrapbook_items")
+    .update({ title: title.trim().slice(0, 80) || null })
+    .eq("post_id", postId);
+  if (error) return { error: "The title didn't save. Try again." };
+  revalidatePath("/scrapbook");
   return {};
 }
 

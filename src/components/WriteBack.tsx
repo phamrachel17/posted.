@@ -6,7 +6,16 @@ import { Doodle } from "./Doodle";
 import { VoiceRecorder } from "./VoiceRecorder";
 
 /** The field under a post: write a note, or tap the mic to leave a voice memo. */
-export function WriteBack({ postId, spaceId, partnerName }: { postId: string; spaceId: string; partnerName?: string }) {
+type Props = {
+  postId: string;
+  spaceId: string;
+  partnerName?: string;
+  /** Called after a note is sent (the inline version closes itself). */
+  onSent?: () => void;
+  autoFocus?: boolean;
+};
+
+export function WriteBack({ postId, spaceId, partnerName, onSent, autoFocus }: Props) {
   const [text, setText] = useState("");
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +29,11 @@ export function WriteBack({ postId, spaceId, partnerName }: { postId: string; sp
           target={`reply:${postId}`}
           autoStart
           submitLabel="Send"
-          onSubmit={(audio) => createReply({ postId, body: "", audio })}
+          onSubmit={async (audio) => {
+            const result = await createReply({ postId, body: "", audio });
+            if (!result.error) onSent?.();
+            return result;
+          }}
           onClose={() => setRecording(false)}
         />
       </div>
@@ -39,6 +52,7 @@ export function WriteBack({ postId, spaceId, partnerName }: { postId: string; sp
           else {
             setText("");
             setError(null);
+            onSent?.();
           }
         });
       }}
@@ -50,6 +64,7 @@ export function WriteBack({ postId, spaceId, partnerName }: { postId: string; sp
           rows={1}
           value={text}
           maxLength={5000}
+          autoFocus={autoFocus}
           placeholder={partnerName ? `Write back to ${partnerName}…` : "Write back…"}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {

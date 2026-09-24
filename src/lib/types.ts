@@ -82,7 +82,7 @@ export type LessonMeta = {
   notes?: string;
 };
 
-export type ReplyPreview = { author_id: string; body: string | null; hasAudio: boolean };
+export type ReplyPreview = { id: string; author_id: string; body: string | null; hasAudio: boolean };
 
 export type Post = {
   id: string;
@@ -99,6 +99,7 @@ export type Post = {
   reactions: Reaction[];
   latestReply: ReplyPreview | null;
   kept: boolean;
+  inScrapbook: boolean;
 };
 
 export type Reply = {

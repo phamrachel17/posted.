@@ -38,13 +38,12 @@ export default function PreviewPage() {
   const visit = new Date(now.getTime() + 18 * 24 * HOUR).toISOString().slice(0, 10);
   const us: Us = { me, partner, space: { id: "s", name: null, next_visit_on: visit, next_visit_place: "Seattle" } };
   const spanish: NotebookRef = { id: "nb1", slug: "spanish", name: "Spanish", doodle: "nb-language", kind: "lessons" };
-  const movies: NotebookRef = { id: "nb2", slug: "movies", name: "Movies", doodle: "nb-popcorn", kind: "plain" };
 
   const post = (id: string, who: Member, hoursAgo: number, rest: Partial<Post>): Post => {
     const created = new Date(now.getTime() - hoursAgo * HOUR);
     return {
       id, author_id: who.id, kind: "note", body: null, meta: {}, created_at: created.toISOString(), edited_at: null,
-      notebook: null, photos: [], audio: null, reactions: [], latestReply: null, kept: false,
+      notebook: null, photos: [], audio: null, reactions: [], latestReply: null, kept: false, inScrapbook: false,
       postmark: { city: who.city, tz: who.timezone, local: localStamp(created, who.timezone) },
       ...rest,
     };
@@ -66,18 +65,16 @@ export default function PreviewPage() {
     }),
     post("p3", partner, 18, {
       body: "Question for Sunday: why is it “estoy cansada” and not “soy cansada”? I've been saying it wrong for a month.",
-      notebook: spanish,
     }),
     post("p4", me, 24, {
       kind: "photo", body: "First persimmons at the market. Saving you the ugliest one.",
       photos: [{ id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 560, height: 800 }],
       reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
-      latestReply: { author_id: "arya", body: "The ugliest one is the best one.", hasAudio: false },
+      latestReply: { id: "r1", author_id: "arya", body: "The ugliest one is the best one.", hasAudio: false },
       kept: true,
     }),
     post("p5", me, 50, {
       body: "Just watched Red and I have SO many thoughts about Michael and Kay.",
-      notebook: movies,
       reactions: [{ member_id: "arya", emoji: "😂" }],
     }),
   ];
@@ -101,7 +98,6 @@ export default function PreviewPage() {
           us={us}
           posts={posts}
           now={now}
-          notebooks={[spanish, movies]}
           lesson={{
             id: "l8", author_id: "rachel", created_at: now.toISOString(), notebook: spanish,
             meta: {

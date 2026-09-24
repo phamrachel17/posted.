@@ -20,6 +20,11 @@ function pick(seed: string, count: number) {
   return (Math.abs(h) % count) + 1;
 }
 
+/** The file URL for a drawing: the hand-drawn PNG if there is one, else the placeholder SVG. */
+export function doodleUrl(name: string) {
+  return `/doodles/${DRAWN.has(name) ? `${name}.png` : `${name}.svg`}`;
+}
+
 /**
  * A drawing from /public/doodles, colored with currentColor via a CSS mask.
  * Hand-drawn PNGs (listed in lib/drawn.ts) win over the placeholder SVGs.

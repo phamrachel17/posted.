@@ -54,7 +54,7 @@ export function LoginForm({ next, newcomer }: Props) {
             />
             {mode === "password" && (
               <button type="button" className="text-link" onClick={() => setMode("link")}>
-                Forgot your password? Email me a sign-in link
+                Forgot your password?
               </button>
             )}
             {mode === "create" && (

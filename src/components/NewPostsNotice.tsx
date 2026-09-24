@@ -21,14 +21,18 @@ export function NewPostsNotice({ spaceId, meId, partnerName }: { spaceId: string
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts", filter: `space_id=eq.${spaceId}` },
         (payload) => {
-          if ((payload.new as { author_id?: string }).author_id !== meId) setWaiting(true);
+          const post = payload.new as { author_id?: string; notebook_id?: string | null };
+          if (post.author_id === meId) return;
+          // Notebook posts don't appear on Today; quietly refresh so the sidebar dot shows.
+          if (post.notebook_id) router.refresh();
+          else setWaiting(true);
         },
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [spaceId, meId, partnerName]);
+  }, [spaceId, meId, partnerName, router]);
 
   if (!waiting || !partnerName) return null;
   return (

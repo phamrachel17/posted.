@@ -5,6 +5,7 @@ import { DAY_PROMPTS, weatherLabel } from "@/lib/day";
 import type { People } from "@/lib/people";
 import { exactTime, longDate, spokenTime } from "@/lib/time";
 import type { DayMeta, LessonMeta, Post } from "@/lib/types";
+import { CardFooter } from "./CardFooter";
 import { Doodle } from "./Doodle";
 import { NotebookMark } from "./NotebookMark";
 import { PostBody } from "./PostBody";
@@ -79,6 +80,9 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
   const isNew = isMine && now.getTime() - new Date(post.created_at).getTime() < NEW_STAMP_MS;
   const n = post.photos.length;
   const replier = post.latestReply ? people.byId[post.latestReply.author_id] : null;
+  const canEdit = post.kind !== "day" && post.kind !== "lesson";
+  const partnerId = Object.keys(people.byId).find((id) => id !== people.meId);
+  const partnerName = partnerId ? people.byId[partnerId].name : undefined;
 
   return (
     <article className={detail ? "card card-detail" : "card"} style={author ? inkStyle(author.ink) : undefined}>
@@ -119,24 +123,40 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
         <VoicePlayer id={post.audio.id} url={post.audio.url} durationMs={post.audio.duration_ms} peaks={post.audio.peaks} />
       )}
 
-      <footer className="card-foot">
-        <ReactionBar target={{ postId: post.id }} reactions={post.reactions} people={people} readOnly={readOnly} />
-        {!detail && (
-          <Link href={`/p/${post.id}`} className="write-back-link">
-            {post.latestReply ? "Open" : "Write back"}
-          </Link>
-        )}
-        {post.kept && <Doodle name="kept" size={16} className="kept-mark" label="Kept" />}
-        {!readOnly && (
-          <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={post.kind !== "day" && post.kind !== "lesson"} leaveOnDelete={detail} />
-        )}
-      </footer>
+      {detail ? (
+        <footer className="card-foot">
+          <ReactionBar target={{ postId: post.id }} reactions={post.reactions} people={people} readOnly={readOnly} />
+          {post.kept && <Doodle name="kept" size={16} className="kept-mark" label="Kept" />}
+          {!readOnly && <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={canEdit} inScrapbook={post.inScrapbook} leaveOnDelete />}
+        </footer>
+      ) : (
+        <CardFooter
+          postId={post.id}
+          spaceId={people.spaceId}
+          partnerName={partnerName}
+          start={<ReactionBar target={{ postId: post.id }} reactions={post.reactions} people={people} readOnly={readOnly} />}
+          end={
+            <>
+              {post.kept && <Doodle name="kept" size={16} className="kept-mark" label="Kept" />}
+              {!readOnly && <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={canEdit} inScrapbook={post.inScrapbook} />}
+            </>
+          }
+        />
+      )}
 
       {!detail && post.latestReply && replier && (
-        <Link href={`/p/${post.id}`} className="reply-preview" style={inkStyle(replier.ink)}>
-          <b>{replier.name} wrote back</b>
-          <span>{post.latestReply.body ?? (post.latestReply.hasAudio ? "A voice memo" : "")}</span>
-        </Link>
+        <div className="reply-preview" style={inkStyle(replier.ink)}>
+          <Link href={`/p/${post.id}`} className="reply-preview-link">
+            <b>{post.latestReply.author_id === people.meId ? "You wrote back" : `${replier.name} wrote back`}</b>
+            {post.latestReply.body === null && <span>{post.latestReply.hasAudio ? "A voice memo" : ""}</span>}
+          </Link>
+          {post.latestReply.body !== null && (
+            <PostBody postId={post.latestReply.id} body={post.latestReply.body} kind="reply" className="reply-preview-text" />
+          )}
+          {post.latestReply.author_id === people.meId && !readOnly && (
+            <PostMenu postId={post.latestReply.id} isMine kept={false} canEdit={post.latestReply.body !== null} kind="reply" />
+          )}
+        </div>
       )}
 
       <Postmark postmark={post.postmark} isNew={isNew} big={detail} />

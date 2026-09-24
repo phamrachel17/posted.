@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { Doodle } from "./Doodle";
+import { NotebookDialog } from "./NotebookDialog";
 import { NotebookMark } from "./NotebookMark";
 import { OnlineDot } from "./Presence";
 import { RECORD_EVENT } from "@/lib/events";
@@ -11,6 +12,7 @@ import { RECORD_EVENT } from "@/lib/events";
 const LINKS = [
   { href: "/", label: "Today", doodle: "nav-today" },
   { href: "/notebooks", label: "Notebooks", doodle: "nav-notebooks" },
+  { href: "/scrapbook", label: "Scrapbook", doodle: "nav-scrapbook" },
   { href: "/kept", label: "Kept", doodle: "nav-kept" },
   { href: "/settings", label: "You two", doodle: "nav-you-two" },
 ];
@@ -54,19 +56,26 @@ export function AppNav({ me, partner, active, notebooks = [] }: Props) {
             {l.label}
           </Link>
         ))}
-        {notebooks.length > 0 && (
+        {notebooks && (
           <div className="nav-notebooks">
-            <span className="label">Notebooks</span>
+            <div className="nav-notebooks-head">
+              <span className="label">Notebooks</span>
+              <NotebookDialog triggerClassName="nav-add" triggerLabel="Start a notebook" trigger={<Doodle name="plus" size={14} />} />
+            </div>
             <ul>
               {notebooks.map((n) => {
                 const href = `/n/${n.slug}`;
                 const here = !active && (pathname === href || pathname.startsWith(`${href}/`));
                 return (
                   <li key={n.slug}>
-                    <Link href={href} className="nav-nb" aria-current={here ? "page" : undefined}>
+                    <Link
+                      href={href}
+                      className={n.isNew && !here ? "nav-nb is-new" : "nav-nb"}
+                      aria-current={here ? "page" : undefined}
+                    >
                       <NotebookMark doodle={n.doodle} size={16} />
                       <span className="nav-nb-name">{n.name}</span>
-                      {n.isNew && !here && <span className="new-dot" aria-label="New from your partner" />}
+                      {n.isNew && !here && <span className="visually-hidden"> (new)</span>}
                     </Link>
                   </li>
                 );
