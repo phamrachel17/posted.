@@ -24,6 +24,8 @@ const OUTPUTS = [
   { src: "language.PNG", name: "nb-language", shape: "square", size: 160, thicken: 12 },
   { src: "music.PNG", name: "nb-music", shape: "square", size: 160, thicken: 0 },
   { src: "movie.PNG", name: "nb-popcorn", shape: "square", size: 160, thicken: 0 },
+  { src: "book.PNG", name: "nb-reading", shape: "square", size: 160, thicken: 8 },
+  { src: "cooking.PNG", name: "nb-cooking", shape: "square", size: 160, thicken: 20 },
   { src: "saved.PNG", name: "kept", shape: "square", size: 128, thicken: 0 },
   { src: "saved.PNG", name: "nav-kept", shape: "square", size: 128, thicken: 0 },
   { src: "saved.PNG", name: "empty-kept", shape: "natural", size: 240, thicken: 0 },

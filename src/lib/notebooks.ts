@@ -15,7 +15,7 @@ export function coverColor(cover: string | null | undefined) {
 
 /** Doodles offered in the notebook picker. Any file named nb-*.svg can be used. */
 export const NOTEBOOK_DOODLES = [
-  "nb-popcorn", "nb-music", "nb-language", "nb-book", "nb-film", "nb-pan",
+  "nb-popcorn", "nb-music", "nb-language", "nb-reading", "nb-cooking", "nb-book", "nb-film", "nb-pan",
   "nb-star", "nb-plane", "nb-thought", "nb-enye", "nb-heart", "nb-sun", "nb-camera", "nb-leaf",
 ];
 

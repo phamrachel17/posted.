@@ -93,7 +93,8 @@ export default function PreviewPage() {
             { slug: "spanish", name: "Spanish", doodle: "nb-language", isNew: true },
             { slug: "movies", name: "Movies", doodle: "nb-popcorn", isNew: false },
             { slug: "music", name: "Music", doodle: "nb-music", isNew: true },
-            { slug: "cooking", name: "Cooking", doodle: "nb-pan", isNew: false },
+            { slug: "cooking", name: "Cooking", doodle: "nb-cooking", isNew: false },
+            { slug: "books", name: "Books", doodle: "nb-reading", isNew: false },
           ]}
         />
         <TodayView

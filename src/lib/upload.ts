@@ -1,12 +1,15 @@
 import { createClient } from "./supabase/client";
-import { preparePhoto } from "./images";
+import { PhotoError, preparePhoto } from "./images";
 import type { NewAudio, NewPhoto } from "@/app/actions/posts";
 
 export async function uploadPhoto(spaceId: string, file: File): Promise<NewPhoto> {
   const { blob, width, height } = await preparePhoto(file);
   const path = `${spaceId}/${crypto.randomUUID()}.jpg`;
   const { error } = await createClient().storage.from("media").upload(path, blob, { contentType: "image/jpeg", upsert: false });
-  if (error) throw error;
+  if (error) {
+    console.error("Photo upload failed:", error);
+    throw new PhotoError("The photo couldn't be uploaded.", `Storage said: ${error.message}`);
+  }
   return { path, width, height, mime: "image/jpeg" };
 }
 

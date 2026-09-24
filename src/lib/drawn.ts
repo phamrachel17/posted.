@@ -12,8 +12,10 @@ export const DRAWN = new Set<string>([
   "nav-notebooks",
   "nav-today",
   "nav-you-two",
+  "nb-cooking",
   "nb-language",
   "nb-music",
   "nb-popcorn",
+  "nb-reading",
   "stars"
 ]);

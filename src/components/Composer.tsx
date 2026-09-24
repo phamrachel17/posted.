@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPost } from "@/app/actions/posts";
 import { removeUpload, uploadPhoto } from "@/lib/upload";
+import { PhotoError } from "@/lib/images";
 import { DAY_PROMPTS, WEATHER } from "@/lib/day";
 import { RECORD_EVENT } from "@/lib/events";
 import type { DayMeta, NotebookRef, Weather } from "@/lib/types";
@@ -14,7 +15,7 @@ import { VoiceRecorder } from "./VoiceRecorder";
 const MAX_PHOTOS = 6;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
-type Attached = { id: string; preview: string; status: "uploading" | "ready" | "failed"; photo?: NewPhoto };
+type Attached = { id: string; preview: string; status: "uploading" | "ready" | "failed"; photo?: NewPhoto; problem?: { title: string; detail?: string } };
 type Mode = "write" | "voice" | "day";
 
 function storage(key: string, value?: string) {
@@ -111,7 +112,14 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
       if (!preview) {
         uploadPhoto(spaceId, file).then(
           (photo) => update(id, { status: "ready", photo }),
-          () => update(id, { status: "failed" }),
+          (err: unknown) => {
+            console.error("Photo failed:", err);
+            const problem =
+              err instanceof PhotoError
+                ? { title: err.message, detail: err.detail }
+                : { title: `${file.name} didn't upload.`, detail: err instanceof Error ? err.message : undefined };
+            update(id, { status: "failed", problem });
+          },
         );
       }
     }
@@ -287,12 +295,14 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         </div>
       )}
 
-      {failed && (
-        <p className="error-note">
-          <b>A photo didn&rsquo;t upload.</b>
-          <span>Remove it and add it again. If it keeps failing, it may be a format this browser can&rsquo;t read, so try a JPEG.</span>
-        </p>
-      )}
+      {photos
+        .filter((p) => p.status === "failed")
+        .map((p) => (
+          <p className="error-note" key={`err-${p.id}`}>
+            <b>{p.problem?.title ?? "A photo didn’t upload."}</b>
+            <span>{p.problem?.detail ?? "Remove it and add it again."}</span>
+          </p>
+        ))}
       {error && <p className="error-note"><b>{error}</b></p>}
 
       <div className="composer-row">
@@ -300,7 +310,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
           <Doodle name="camera" size={18} />
           <span className="tool-label">Photo</span>
         </button>
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onPick(e.target.files)} />
+        <input ref={fileRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => onPick(e.target.files)} />
         {!fixedNotebook && (
           <button type="button" className="composer-tool" onClick={() => setMode("day")}>
             <Doodle name="day" size={18} />
