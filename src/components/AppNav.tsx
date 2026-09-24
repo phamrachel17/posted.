@@ -9,10 +9,11 @@ import { NotebookMark } from "./NotebookMark";
 import { OnlineDot } from "./Presence";
 import { RECORD_EVENT } from "@/lib/events";
 
-const LINKS = [
+const LINKS: { href: string; label: string; doodle: string; sidebarOnly?: boolean }[] = [
   { href: "/", label: "Today", doodle: "nav-today" },
   { href: "/notebooks", label: "Notebooks", doodle: "nav-notebooks" },
   { href: "/scrapbook", label: "Scrapbook", doodle: "nav-scrapbook" },
+  { href: "/bucket-list", label: "Bucket list", doodle: "nav-bucket", sidebarOnly: true },
   { href: "/kept", label: "Kept", doodle: "nav-kept" },
   { href: "/settings", label: "You two", doodle: "nav-you-two" },
 ];
@@ -95,7 +96,7 @@ export function AppNav({ me, partner, active, notebooks = [] }: Props) {
         </div>
       </nav>
       <nav className="tabbar" aria-label="Main">
-        {LINKS.map((l, i) => (
+        {LINKS.filter((l) => !l.sidebarOnly).map((l, i) => (
           <span key={l.href} className="tab-slot" style={{ order: i < 2 ? i : i + 1 }}>
             <Link href={l.href} aria-current={current(l.href)} className="tab-link">
               <Doodle name={l.doodle} size={22} />

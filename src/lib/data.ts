@@ -413,3 +413,28 @@ export async function getScrapPage(id: string): Promise<ScrapPage | null> {
   const { pieces, ...page } = data as unknown as Omit<ScrapPage, "pieces"> & { pieces: PieceRow[] };
   return { ...page, pieces: await hydratePieces(supabase, pieces) };
 }
+
+// ---------------------------------------------------------------------------
+// Bucket list
+// ---------------------------------------------------------------------------
+
+export type BucketItem = {
+  id: string;
+  body: string;
+  note: string | null;
+  added_by: string;
+  done_by: string | null;
+  done_at: string | null;
+  created_at: string;
+};
+
+/** The whole shared bucket list, oldest first. `missing` if the migration hasn't run. */
+export const getBucketList = cache(async (): Promise<{ missing: boolean; items: BucketItem[] }> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bucket_items")
+    .select("id, body, note, added_by, done_by, done_at, created_at")
+    .order("created_at", { ascending: true });
+  if (error) return { missing: true, items: [] };
+  return { missing: false, items: data as BucketItem[] };
+});

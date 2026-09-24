@@ -6,7 +6,7 @@ import type { NotebookRef, Post, Us } from "@/lib/types";
 import { Composer } from "./Composer";
 import { Doodle } from "./Doodle";
 import { FeedList } from "./FeedList";
-import { RightRail } from "./RightRail";
+import { RightRail, type BucketStat } from "./RightRail";
 
 type Props = {
   us: Us;
@@ -14,13 +14,14 @@ type Props = {
   now: Date;
   lesson?: (LessonSummary & { notebook: NotebookRef }) | null;
   olderHref?: string | null;
+  bucket?: BucketStat | null;
   /** Showing an older page: no composer, no "last here" line. */
   older?: boolean;
   startRecording?: boolean;
   preview?: boolean;
 };
 
-export function TodayView({ us, posts, now, lesson, olderHref, older, startRecording, preview }: Props) {
+export function TodayView({ us, posts, now, lesson, olderHref, older, startRecording, preview, bucket }: Props) {
   const { me, partner } = us;
   const todayKey = dayKey(now, me.timezone);
   const today = dayHeading(todayKey, todayKey);
@@ -55,7 +56,7 @@ export function TodayView({ us, posts, now, lesson, olderHref, older, startRecor
           headTodayGroup={older}
         />
       </main>
-      <RightRail us={us} now={now} lesson={lesson ?? null} />
+      <RightRail us={us} now={now} lesson={lesson ?? null} bucket={bucket} />
     </>
   );
 }

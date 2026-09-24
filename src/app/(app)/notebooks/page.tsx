@@ -15,7 +15,10 @@ export default async function NotebooksPage() {
 
   return (
     <main className="main wide" style={inkStyle(us.me.ink)}>
-      <h1 className="page-title">Notebooks</h1>
+      <header className="page-head">
+        <h1 className="page-title">Notebooks</h1>
+        <p className="hint">One for each thing you share. Posts in a notebook stay in that notebook.</p>
+      </header>
       <div className="shelf">
         {notebooks.map((n) => {
           const last = activity.get(n.id);

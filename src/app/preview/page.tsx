@@ -106,6 +106,7 @@ export default function PreviewPage() {
             },
           }}
           preview
+          bucket={{ done: 7, total: 23, latest: { body: "Kerry Park at sunset", by: "Arya" } }}
         />
       </div>
     </PresenceProvider>

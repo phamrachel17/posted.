@@ -18,7 +18,9 @@ export default async function SettingsPage() {
 
   return (
     <main className="main settings">
-      <h1 className="page-title">You two</h1>
+      <header className="page-head">
+        <h1 className="page-title">You two</h1>
+      </header>
 
       <section aria-labelledby="you">
         <h2 id="you" className="label">You</h2>
