@@ -7,11 +7,11 @@
   --ink-2: #535a67;
   --ink-3: #6f7580;
   --rule: #d2d5cb;
-  /* The accent is teal: --stamp for text and fine lines, --accent-fill for bars
-     and dots, --stamp-wash for highlighted backgrounds. */
-  --accent-fill: #2a9d98;
-  --stamp: #1b7f7c;
-  --stamp-wash: #ddf1ef;
+  /* The accent is dark red: --stamp for text and fine lines, --accent-fill for
+     bars and dots, --stamp-wash for highlighted backgrounds. */
+  --accent-fill: #a32a36;
+  --stamp: #8b1e2b;
+  --stamp-wash: #f5e0e1;
   --warn: #9a4a1f;
   --warn-wash: #f5e7dd;
 
