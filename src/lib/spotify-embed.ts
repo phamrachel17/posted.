@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Spotify's embed player, driven from our own record. Full songs play when the
 // person is signed in to Spotify in this browser; otherwise Spotify plays a
@@ -110,16 +110,14 @@ export function useSpotifyEmbed(uri: string | null, enabled: boolean) {
     }
   }, [uri]);
 
-  return {
-    holder,
-    state,
-    toggle: () => {
-      if (wasPlaying.current) pausedByUs.current = Date.now();
-      controller.current?.togglePlay();
-    },
-    pause: () => {
-      pausedByUs.current = Date.now();
-      controller.current?.pause();
-    },
-  };
+  const toggle = useCallback(() => {
+    if (wasPlaying.current) pausedByUs.current = Date.now();
+    controller.current?.togglePlay();
+  }, []);
+  const pause = useCallback(() => {
+    pausedByUs.current = Date.now();
+    controller.current?.pause();
+  }, []);
+
+  return { holder, state, toggle, pause };
 }

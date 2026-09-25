@@ -100,6 +100,8 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
   async function togglePlay() {
     const el = audioRef.current;
     if (!current) return setChanging(true);
+    // Spotify is still connecting: pressing now would do nothing, so wait.
+    if (fullPending) return;
     if (useFull && uri) {
       window.dispatchEvent(new CustomEvent("posted:play", { detail: "jukebox" }));
       if (await fullToggle(uri)) return setError(null);
@@ -179,12 +181,18 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
         </div>
       </div>
 
-      {current && (useFull || useEmbed || current.preview) && (
+      {current && (useFull || useEmbed || fullPending || current.preview) && (
         <div className="jukebox-controls">
-          <button type="button" className="b-tool" onClick={togglePlay}>
-            {playing ? "❚❚ Pause" : useFull || useEmbed ? "▶ Play" : "▶ Play preview"}
+          <button type="button" className="b-tool" onClick={togglePlay} disabled={fullPending}>
+            {fullPending ? "Connecting to Spotify…" : playing ? "❚❚ Pause" : useFull || useEmbed ? "▶ Play" : "▶ Play preview"}
           </button>
         </div>
+      )}
+      {useFull && fullState.movedTo && !playing && (
+        <p className="hint jukebox-note">
+          Spotify moved the song to {fullState.movedTo}. Press Play to bring it back here. If this keeps happening, quit the
+          Spotify app while you listen in posted.
+        </p>
       )}
 
       {useFull && current && (playing || progress > 0) && (

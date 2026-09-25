@@ -57,13 +57,16 @@ export type FullPlayerState = {
   playing: boolean;
   /** 0–1 */
   progress: number;
+  /** Spotify moved the song to another of your devices (its name), so it stopped here. */
+  movedTo: string | null;
 };
 
 export function useSpotifyPlayer(enabled: boolean) {
   const player = useRef<SdkPlayer | null>(null);
   const deviceId = useRef<string | null>(null);
   const loadedUri = useRef<string | null>(null);
-  const [state, setState] = useState<FullPlayerState>({ ready: false, problem: null, playing: false, progress: 0 });
+  const onLeave = useRef<(() => void) | null>(null);
+  const [state, setState] = useState<FullPlayerState>({ ready: false, problem: null, playing: false, progress: 0, movedTo: null });
 
   useEffect(() => {
     if (!enabled) return;
@@ -103,21 +106,40 @@ export function useSpotifyPlayer(enabled: boolean) {
         }) as never);
         p.connect();
         player.current = p;
+        // Closing or reloading the page removes this record player from your Spotify devices,
+        // instead of leaving it behind for Spotify to hand songs to.
+        const leave = () => p.disconnect();
+        window.addEventListener("pagehide", leave);
+        onLeave.current = () => window.removeEventListener("pagehide", leave);
       })
       .catch(() => !cancelled && setState((s) => ({ ...s, problem: "unsupported" })));
     return () => {
       cancelled = true;
+      onLeave.current?.();
       player.current?.disconnect();
       player.current = null;
     };
   }, [enabled]);
 
   // The SDK only reports position on changes, so tick the progress bar while playing.
+  // Every few seconds, also ask Spotify where the song is actually playing: it can hand
+  // it to another of your devices (like the Spotify app) without telling this player.
   useEffect(() => {
     if (!state.playing) return;
+    let ticks = 0;
     const t = window.setInterval(async () => {
       const st = await player.current?.getCurrentState();
       if (st) setState((s) => ({ ...s, progress: st.duration ? st.position / st.duration : 0, playing: !st.paused }));
+      if (++ticks % 4 !== 0) return;
+      const token = await accessToken();
+      if (!token) return;
+      const res = await fetch("https://api.spotify.com/v1/me/player", { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+      if (!res || res.status !== 200) return;
+      const now = (await res.json()) as { device?: { id: string; name: string } };
+      if (now.device && now.device.id !== deviceId.current) {
+        loadedUri.current = null;
+        setState((s) => ({ ...s, playing: false, movedTo: now.device!.name }));
+      }
     }, 1000);
     return () => window.clearInterval(t);
   }, [state.playing]);
@@ -146,6 +168,7 @@ export function useSpotifyPlayer(enabled: boolean) {
     }
     if (!res.ok) return false;
     loadedUri.current = uri;
+    setState((s) => ({ ...s, movedTo: null }));
     return true;
   }, []);
 
