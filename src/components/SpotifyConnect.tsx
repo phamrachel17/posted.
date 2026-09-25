@@ -40,3 +40,19 @@ export function SpotifyConnect({ configured, connected, premium }: Props) {
     </div>
   );
 }
+
+const NOTICES: Record<string, string> = {
+  connected: "Spotify is connected. Press play on the record player for the whole song.",
+  "not-premium": "Spotify is connected, but it says this account isn't Premium, so only previews can play here.",
+  cancelled: "Spotify wasn't connected. You can try again any time.",
+  failed: "Spotify didn't connect. Try again. If it keeps happening, check that your Spotify email is added under User Management in the Spotify app.",
+  unconfigured: "Spotify isn't set up for this site yet.",
+};
+
+/** The result of connecting Spotify, shown once when you come back from Spotify's sign-in. */
+export function SpotifyNotice({ status }: { status?: string | string[] }) {
+  const text = typeof status === "string" ? NOTICES[status] : undefined;
+  if (!text) return null;
+  const ok = status === "connected";
+  return <p className={ok ? "hint jukebox-note" : "error-note"}>{ok ? text : <b>{text}</b>}</p>;
+}

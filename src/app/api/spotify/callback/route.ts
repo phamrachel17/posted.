@@ -5,7 +5,8 @@ import { exchangeCode, redirectUri } from "@/lib/spotify-auth";
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const back = request.cookies.get("spotify_back")?.value ?? "/";
-  const done = (status: string) => {
+  const done = (status: string, why?: string) => {
+    if (why) console.error("Spotify connect failed:", why);
     const url = new URL(back, request.url);
     url.searchParams.set("spotify", status);
     const res = NextResponse.redirect(url);
@@ -15,12 +16,12 @@ export async function GET(request: NextRequest) {
   };
 
   const state = params.get("state");
-  if (!state || state !== request.cookies.get("spotify_state")?.value) return done("failed");
+  if (!state || state !== request.cookies.get("spotify_state")?.value) return done("failed", "state cookie missing or different (signed in on another address?)");
   const code = params.get("code");
   if (!code) return done(params.get("error") === "access_denied" ? "cancelled" : "failed");
 
   const tokens = await exchangeCode(code, redirectUri(request.nextUrl.origin));
-  if (!tokens?.refresh_token) return done("failed");
+  if (!tokens?.refresh_token) return done("failed", "token exchange failed");
 
   // Premium is what lets Spotify play whole songs in a browser.
   const me = await fetch("https://api.spotify.com/v1/me", { headers: { Authorization: `Bearer ${tokens.access_token}` }, cache: "no-store" })
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return done("failed");
+  if (!userId) return done("failed", "not signed in to posted.");
   const { error } = await supabase.from("spotify_accounts").upsert({
     user_id: userId,
     refresh_token: tokens.refresh_token,
@@ -39,6 +40,6 @@ export async function GET(request: NextRequest) {
     product: (me?.product as string | undefined) ?? null,
     updated_at: new Date().toISOString(),
   });
-  if (error) return done("failed");
+  if (error) return done("failed", `saving the connection: ${error.message}`);
   return done(me?.product === "premium" ? "connected" : "not-premium");
 }

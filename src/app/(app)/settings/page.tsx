@@ -5,7 +5,7 @@ import { signOut } from "@/app/actions/auth";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { SpaceList } from "@/components/SpaceSwitcher";
 import { StampSettings } from "@/components/StampSettings";
-import { SpotifyConnect } from "@/components/SpotifyConnect";
+import { SpotifyConnect, SpotifyNotice } from "@/components/SpotifyConnect";
 import { spotifyStatus } from "@/lib/spotify-auth";
 import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
 
@@ -17,7 +17,8 @@ async function origin() {
   return `${proto}://${host}`;
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
+  const { spotify: spotifyResult } = await searchParams;
   const us = await getUs();
   if (!us) return null;
   const { me, partner, space } = us;
@@ -75,6 +76,7 @@ export default async function SettingsPage() {
 
       <section aria-labelledby="spotify-title" id="spotify">
         <h2 id="spotify-title" className="label">Spotify</h2>
+        <SpotifyNotice status={spotifyResult} />
         <SpotifyConnect {...await spotifyStatus()} />
       </section>
 

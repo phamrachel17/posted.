@@ -6,6 +6,7 @@ import type { Member, Us } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { Doodle } from "./Doodle";
 import { Jukebox } from "./Jukebox";
+import { SpotifyNotice } from "./SpotifyConnect";
 import { spotifyStatus } from "@/lib/spotify-auth";
 import { LiveClock } from "./LiveClock";
 import { OnlineDot } from "./Presence";
@@ -17,6 +18,7 @@ type Props = {
   now: Date;
   jukebox?: JukeboxData | null;
   preview?: boolean;
+  spotifyResult?: string;
 };
 
 function WeatherLine({ c, imperial }: { c: Conditions | null; imperial: boolean }) {
@@ -45,7 +47,7 @@ function Clock({ m, label, now, weather, imperial, online }: { m: Member; label:
   );
 }
 
-export async function RightRail({ us, now, jukebox, preview }: Props) {
+export async function RightRail({ us, now, jukebox, preview, spotifyResult }: Props) {
   const { me, partner, space } = us;
   const imperial = usesImperial(me.timezone);
   const days = space.next_visit_on ? daysUntil(space.next_visit_on, me.timezone, now) : null;
@@ -106,6 +108,7 @@ export async function RightRail({ us, now, jukebox, preview }: Props) {
             preview={preview}
             spotify={spotify}
           />
+          <SpotifyNotice status={spotifyResult} />
         </div>
       )}
 

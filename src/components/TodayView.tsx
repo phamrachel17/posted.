@@ -15,13 +15,15 @@ type Props = {
   olderHref?: string | null;
   jukebox?: JukeboxData | null;
   stampBook?: BookStamp[];
+  /** How connecting Spotify went, when coming back from its sign-in. */
+  spotifyResult?: string;
   /** Showing an older page: no composer, no "last here" line. */
   older?: boolean;
   startRecording?: boolean;
   preview?: boolean;
 };
 
-export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox, stampBook }: Props) {
+export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox, stampBook, spotifyResult }: Props) {
   const { me, partner } = us;
   const todayKey = dayKey(now, me.timezone);
   const today = dayHeading(todayKey, todayKey);
@@ -64,7 +66,7 @@ export function TodayView({ us, posts, now, olderHref, older, startRecording, pr
           headTodayGroup={older}
         />
       </main>
-      <RightRail us={us} now={now} jukebox={jukebox} preview={preview} />
+      <RightRail us={us} now={now} jukebox={jukebox} preview={preview} spotifyResult={spotifyResult} />
     </>
   );
 }

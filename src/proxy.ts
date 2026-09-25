@@ -17,7 +17,8 @@ export async function proxy(request: NextRequest) {
 
   // A sign-in code that landed somewhere other than the callback (for example the
   // Site URL, when the redirect address wasn't on Supabase's allow-list). Send it on.
-  if (!pathname.startsWith("/auth/") && (searchParams.has("code") || searchParams.has("error_code"))) {
+  // API routes are left alone: Spotify's sign-in also comes back with a ?code=.
+  if (!pathname.startsWith("/auth/") && !pathname.startsWith("/api/") && (searchParams.has("code") || searchParams.has("error_code"))) {
     const url = new URL("/auth/callback", request.url);
     searchParams.forEach((value, key) => url.searchParams.set(key, value));
     if (pathname !== "/") url.searchParams.set("next", pathname);
