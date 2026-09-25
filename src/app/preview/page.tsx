@@ -43,7 +43,7 @@ export default function PreviewPage() {
     const created = new Date(now.getTime() - hoursAgo * HOUR);
     return {
       id, author_id: who.id, kind: "note", body: null, meta: {}, created_at: created.toISOString(), edited_at: null,
-      notebook: null, photos: [], audio: null, reactions: [], latestReply: null, kept: false, inScrapbook: false,
+      notebook: null, photos: [], audio: null, reactions: [], latestReply: null, kept: false,
       postmark: { city: who.city, tz: who.timezone, local: localStamp(created, who.timezone) },
       ...rest,
     };

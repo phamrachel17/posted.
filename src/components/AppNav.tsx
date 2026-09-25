@@ -74,7 +74,7 @@ export function AppNav({ me, partner, active, notebooks = [] }: Props) {
                       className={n.isNew && !here ? "nav-nb is-new" : "nav-nb"}
                       aria-current={here ? "page" : undefined}
                     >
-                      <NotebookMark doodle={n.doodle} size={16} />
+                      <NotebookMark doodle={n.doodle} size={26} />
                       <span className="nav-nb-name">{n.name}</span>
                       {n.isNew && !here && <span className="visually-hidden"> (new)</span>}
                     </Link>

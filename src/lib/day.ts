@@ -3,9 +3,10 @@ import type { DayMeta, Mood, Weather } from "./types";
 export const MOODS: { id: Mood; label: string }[] = [
   { id: "happy", label: "Happy" },
   { id: "calm", label: "Calm" },
+  { id: "okay", label: "Okay" },
   { id: "tired", label: "Tired" },
   { id: "stressed", label: "Stressed" },
-  { id: "down", label: "Down" },
+  { id: "down", label: "Sad" },
 ];
 
 export const DAY_PROMPTS = [

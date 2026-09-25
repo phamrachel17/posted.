@@ -57,7 +57,7 @@ export type Notebook = NotebookRef & {
 
 export type Weather = "clear" | "bright-spells" | "overcast" | "drizzle" | "stormy";
 
-export type Mood = "happy" | "calm" | "tired" | "stressed" | "down";
+export type Mood = "happy" | "calm" | "okay" | "tired" | "stressed" | "down";
 
 export type DayMeta = {
   mood?: Mood;
@@ -106,7 +106,6 @@ export type Post = {
   reactions: Reaction[];
   latestReply: ReplyPreview | null;
   kept: boolean;
-  inScrapbook: boolean;
 };
 
 export type Reply = {

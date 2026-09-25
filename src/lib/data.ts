@@ -1,7 +1,6 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
-import { dayKey } from "./time";
 import { spotifyMeta } from "./spotify";
 import type {
   Audio,
@@ -111,19 +110,8 @@ type PostRow = Omit<Post, "photos" | "audio" | "latestReply" | "kept" | "noteboo
   keeps: { member_id: string }[];
 };
 
-/** Which of these posts are in the scrapbook. Empty if the scrapbook migration hasn't run. */
-async function scrapbookIds(supabase: Supabase, postIds: string[]): Promise<Set<string>> {
-  if (!postIds.length) return new Set();
-  const { data, error } = await supabase.from("scrapbook_items").select("post_id").in("post_id", postIds);
-  if (error) return new Set();
-  return new Set((data as { post_id: string }[]).map((r) => r.post_id));
-}
-
 async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]> {
-  const [urls, inScrapbook] = await Promise.all([
-    signPaths(supabase, rows.flatMap((r) => r.media.map((m) => m.path))),
-    scrapbookIds(supabase, rows.map((r) => r.id)),
-  ]);
+  const urls = await signPaths(supabase, rows.flatMap((r) => r.media.map((m) => m.path)));
   return rows.map(({ media, replies, keeps, ...post }) => {
     const live = replies.filter((r) => !r.deleted_at).sort((a, b) => b.created_at.localeCompare(a.created_at));
     const last = live[0];
@@ -134,7 +122,6 @@ async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]
       latestReply: last ? { id: last.id, author_id: last.author_id, body: last.body, hasAudio: last.media.some((m) => m.type === "audio") } : null,
       // RLS only returns my own keeps, so any row means I kept it.
       kept: keeps.length > 0,
-      inScrapbook: inScrapbook.has(post.id),
     };
   });
 }
@@ -303,54 +290,6 @@ export const getNotebookNews = cache(async (): Promise<Set<string>> => {
 // ---------------------------------------------------------------------------
 // Scrapbook
 // ---------------------------------------------------------------------------
-
-export type ScrapbookItem = { id: string; title: string | null; post: Post };
-export type ScrapbookMonth = { key: string; count: number };
-
-/**
- * One month of the scrapbook (by when each post was made, in your time zone),
- * plus the list of months that have anything in them, newest first.
- * `missing` is true if the scrapbook migration hasn't been run yet.
- */
-export async function getScrapbook(month: string | undefined, timeZone: string): Promise<{
-  missing: boolean;
-  months: ScrapbookMonth[];
-  month: string | null;
-  items: ScrapbookItem[];
-}> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("scrapbook_items")
-    .select("id, title, post_id, post:posts!scrapbook_items_post_id_space_id_fkey(created_at, deleted_at)");
-  if (error) return { missing: true, months: [], month: null, items: [] };
-
-  type Row = { id: string; title: string | null; post_id: string; post: { created_at: string; deleted_at: string | null } | null };
-  const rows = (data as unknown as Row[]).filter((r) => r.post && !r.post.deleted_at);
-  const monthOf = (r: Row) => dayKey(new Date(r.post!.created_at), timeZone).slice(0, 7);
-
-  const counts = new Map<string, number>();
-  for (const r of rows) counts.set(monthOf(r), (counts.get(monthOf(r)) ?? 0) + 1);
-  const months = [...counts.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => b.key.localeCompare(a.key));
-
-  const current = month && counts.has(month) ? month : (months[0]?.key ?? null);
-  const chosen = rows.filter((r) => current && monthOf(r) === current);
-  if (!chosen.length) return { missing: false, months, month: current, items: [] };
-
-  const { data: postRows, error: postError } = await supabase
-    .from("posts")
-    .select(POST_COLUMNS)
-    .in("id", chosen.map((r) => r.post_id))
-    .order("created_at", { ascending: true });
-  if (postError) throw postError;
-  const posts = await hydratePosts(supabase, postRows as unknown as PostRow[]);
-  const titles = new Map(chosen.map((r) => [r.post_id, r]));
-  return {
-    missing: false,
-    months,
-    month: current,
-    items: posts.map((post) => ({ id: titles.get(post.id)!.id, title: titles.get(post.id)!.title, post })),
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Hand-made scrapbook pages

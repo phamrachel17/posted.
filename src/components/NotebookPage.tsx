@@ -92,7 +92,7 @@ export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: 
               <LessonSheet key={lesson.id} postId={lesson.id} meta={lesson.meta as LessonMeta} people={people} />
             ) : (
               <div className="empty">
-                <Doodle name="empty-lessons" size={170} height={153} />
+                <Doodle name="empty-lessons" size={170} height={151} />
                 <b>No lessons yet</b>
                 <p>Start one on Sunday. It&rsquo;s numbered and dated for you, and questions from the week carry over.</p>
               </div>

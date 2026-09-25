@@ -511,6 +511,10 @@ h3.label {
 .nav-nb:hover {
   color: var(--ink);
 }
+.nav-nb .doodle {
+  flex: none;
+  color: var(--ink);
+}
 .nav-nb[aria-current="page"] {
   color: var(--ink);
   font-weight: 500;
@@ -522,7 +526,8 @@ h3.label {
   font-weight: 600;
   background: var(--stamp-wash);
 }
-.nav-nb.is-new:hover {
+.nav-nb.is-new:hover,
+.nav-nb.is-new .doodle {
   color: var(--stamp);
 }
 .nav-nb-name {
@@ -2307,267 +2312,6 @@ button.chip:hover {
   outline: none;
 }
 
-/* ---------- Scrapbook ---------- */
-.month-nav {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: baseline;
-  gap: 16px;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 12px;
-}
-.month-nav h2 {
-  font-size: 34px;
-  text-align: center;
-}
-.month-step {
-  color: var(--ink-2);
-  text-decoration: none;
-  font-size: 14px;
-}
-.month-step:last-child {
-  justify-self: end;
-}
-.month-step:hover {
-  color: var(--ink);
-}
-.spread {
-  columns: 3 220px;
-  column-gap: 24px;
-  padding: 24px 4px 8px;
-}
-.scrap {
-  break-inside: avoid;
-  display: inline-flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  margin-bottom: 24px;
-  transform: rotate(var(--tilt, 0deg));
-  transition: transform 150ms;
-}
-.scrap:hover {
-  transform: rotate(0deg) translateY(-2px);
-}
-.scrap-by {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-3);
-}
-.scrap-caption {
-  font-family: var(--serif);
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.scrap-title {
-  align-self: flex-start;
-  border: 0;
-  background: none;
-  padding: 0;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 19px;
-  color: var(--ink-c);
-  text-align: left;
-}
-.scrap-title.empty {
-  font-size: 13px;
-  font-style: normal;
-  font-family: var(--sans);
-  color: var(--ink-3);
-  opacity: 0;
-}
-.scrap:hover .scrap-title.empty,
-.scrap-title.empty:focus-visible {
-  opacity: 1;
-}
-.scrap-title-input {
-  border: 0;
-  border-bottom: 1px solid var(--ink-c);
-  background: none;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 18px;
-  padding: 2px;
-}
-.scrap-title-input:focus {
-  outline: none;
-}
-.polaroid {
-  background: #fff;
-  padding: 10px 10px 14px;
-  box-shadow: 0 6px 16px -8px rgba(28, 33, 43, 0.45);
-  position: relative;
-}
-.polaroid img {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  background: var(--paper-2);
-}
-.polaroid figcaption {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.scrap-more {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: rgba(28, 33, 43, 0.7);
-  color: #fff;
-  font-size: 12px;
-  border-radius: 10px;
-  padding: 1px 8px;
-}
-.ticket {
-  background: #efe6cf;
-  border: 1.5px dashed #b9a67e;
-  border-radius: 4px;
-  padding: 12px 14px;
-}
-.ticket-head {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #7a6a45;
-}
-.ticket .voice {
-  background: rgba(255, 255, 255, 0.5);
-  max-width: 100%;
-}
-.ticket .voice-wave {
-  gap: 1px;
-}
-.paper-note {
-  background: var(--card);
-  border: 1px solid var(--rule);
-  padding: 16px 16px 12px;
-  box-shadow: var(--shadow-card);
-}
-.scrap-text {
-  font-family: var(--serif);
-  font-size: 17px;
-  line-height: 1.45;
-  color: var(--ink);
-  text-decoration: none;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.weather-tile {
-  background: var(--ink-wash);
-  border-radius: 6px;
-  padding: 16px;
-  color: var(--ink-c);
-}
-.weather-tile b {
-  font-family: var(--serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 22px;
-  color: var(--ink);
-}
-.month-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 18px;
-  border-top: 1px solid var(--rule);
-}
-.month-list a {
-  font-size: 13px;
-  padding: 3px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--rule);
-  color: var(--ink-2);
-  text-decoration: none;
-}
-.month-list a[aria-current="page"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--card);
-}
-@media (prefers-reduced-motion: reduce) {
-  .scrap {
-    transition: none;
-  }
-}
-
-/* ---------- Scrapbook: tabs and removing ---------- */
-.scrap-head {
-  gap: 12px;
-}
-.scrap-tabs {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.scrap-tabs a {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 10px 16px;
-  border: 1px solid var(--rule);
-  border-radius: 7px;
-  text-decoration: none;
-  color: var(--ink-2);
-  background: transparent;
-  min-width: 170px;
-}
-.scrap-tabs a[aria-current="page"] {
-  background: var(--card);
-  border-color: var(--ink);
-  color: var(--ink);
-  box-shadow: var(--shadow-card);
-}
-.scrap-tab-label {
-  font-family: var(--serif);
-  font-size: 19px;
-  font-weight: 500;
-}
-.scrap-tab-kind {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--stamp);
-}
-.scrap {
-  position: relative;
-}
-.scrap-remove {
-  position: absolute;
-  top: -9px;
-  right: -9px;
-  z-index: 2;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid var(--rule);
-  background: var(--card);
-  color: var(--ink-2);
-  display: grid;
-  place-items: center;
-  padding: 0;
-  opacity: 0;
-  transition: opacity 120ms;
-  box-shadow: 0 2px 6px -2px rgba(28, 33, 43, 0.3);
-}
-.scrap:hover .scrap-remove,
-.scrap-remove:focus-visible {
-  opacity: 1;
-}
-.scrap-remove:hover {
-  color: var(--warn);
-}
-@media (hover: none) {
-  .scrap-remove {
-    opacity: 1;
-  }
-}
-
 /* ---------- Scrapbook: hand-made pages ---------- */
 .page-grid {
   display: grid;
@@ -2793,15 +2537,27 @@ button.chip:hover {
   margin-left: auto;
 }
 .sticker-tray {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
-  gap: 8px;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
   border: 1px solid var(--rule);
   border-radius: 7px;
   background: var(--card);
   max-width: 980px;
+  max-height: 420px;
+  overflow-y: auto;
   color: var(--ink-c);
+}
+.sticker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 8px;
 }
 .sticker-tray button {
   border: 1px solid var(--rule);

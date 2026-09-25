@@ -52,7 +52,7 @@ export function DayFields({ value, onChange, date, onDate, timeZone }: Props) {
             title={m.label}
             onClick={() => onChange({ ...value, mood: m.id })}
           >
-            <Doodle name={`mood-${m.id}`} size={30} />
+            <Doodle name={`mood-${m.id}`} size={40} />
             <span className="mood-name">{m.label}</span>
           </button>
         ))}

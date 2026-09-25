@@ -13,7 +13,7 @@ type Result = { error?: string; id?: string };
 
 const MAX_PHOTOS = 6;
 const MAX_VOICE_MS = 5 * 60 * 1000 + 2000;
-const MOODS: Mood[] = ["happy", "calm", "tired", "stressed", "down"];
+const MOODS: Mood[] = ["happy", "calm", "okay", "tired", "stressed", "down"];
 const AUDIO_MIMES = ["audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg"];
 
 function refresh() {
@@ -223,33 +223,6 @@ export async function setKept(postId: string, kept: boolean): Promise<Result> {
     : await supabase.from("keeps").delete().eq("member_id", us.me.id).eq("post_id", postId);
   if (error) return { error: "That didn't save. Try again." };
   refresh();
-  return {};
-}
-
-export async function setInScrapbook(postId: string, on: boolean): Promise<Result> {
-  const us = await getUs();
-  if (!us) return { error: "Sign in again." };
-  const supabase = await createClient();
-  const { error } = on
-    ? await supabase
-        .from("scrapbook_items")
-        .upsert({ space_id: us.space.id, post_id: postId, added_by: us.me.id }, { onConflict: "post_id", ignoreDuplicates: true })
-    : await supabase.from("scrapbook_items").delete().eq("post_id", postId);
-  if (error) return { error: "That didn't save. Try again." };
-  refresh();
-  return {};
-}
-
-export async function setScrapbookTitle(postId: string, title: string): Promise<Result> {
-  const us = await getUs();
-  if (!us) return { error: "Sign in again." };
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("scrapbook_items")
-    .update({ title: title.trim().slice(0, 80) || null })
-    .eq("post_id", postId);
-  if (error) return { error: "The title didn't save. Try again." };
-  revalidatePath("/scrapbook");
   return {};
 }
 

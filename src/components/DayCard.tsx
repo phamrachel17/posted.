@@ -67,7 +67,7 @@ export function DayCard({ postId, meta, authorId, date, timeZone }: Props) {
       <div className="day-top">
         {feeling && (
           <div className="weather">
-            <Doodle name={feeling.doodle} size={34} />
+            <Doodle name={feeling.doodle} size={42} />
             <b>{feeling.label}</b>
           </div>
         )}

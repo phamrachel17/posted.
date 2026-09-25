@@ -21,11 +21,19 @@ const OUTPUTS = [
   { src: "notebook.PNG", name: "nav-notebooks", shape: "square", size: 160, thicken: 14 },
   { src: "notebook.PNG", name: "empty-notebook", shape: "natural", size: 360, thicken: 0 },
   { src: "language.PNG", name: "empty-lessons", shape: "natural", size: 480, thicken: 2 },
-  { src: "language.PNG", name: "nb-language", shape: "square", size: 160, thicken: 12 },
-  { src: "music.PNG", name: "nb-music", shape: "square", size: 160, thicken: 0 },
-  { src: "movie.PNG", name: "nb-popcorn", shape: "square", size: 160, thicken: 0 },
-  { src: "book.PNG", name: "nb-reading", shape: "square", size: 160, thicken: 8 },
-  { src: "cooking.PNG", name: "nb-cooking", shape: "square", size: 160, thicken: 20 },
+  { src: "language.PNG", name: "nb-language", shape: "square", size: 160, thicken: 18 },
+  { src: "music.PNG", name: "nb-music", shape: "square", size: 160, thicken: 14 },
+  { src: "movie.PNG", name: "nb-popcorn", shape: "square", size: 160, thicken: 14 },
+  { src: "book.PNG", name: "nb-reading", shape: "square", size: 160, thicken: 16 },
+  { src: "cooking.PNG", name: "nb-cooking", shape: "square", size: 160, thicken: 26 },
+  { src: "exercise.PNG", name: "nb-exercise", shape: "square", size: 160, thicken: 24 },
+  { src: "yoga.PNG", name: "nb-yoga", shape: "square", size: 160, thicken: 30 },
+  { src: "happy_mood.PNG", name: "mood-happy", shape: "square", size: 160, thicken: 20 },
+  { src: "calm_mood.PNG", name: "mood-calm", shape: "square", size: 160, thicken: 20 },
+  { src: "okay_mood.PNG", name: "mood-okay", shape: "square", size: 160, thicken: 20 },
+  { src: "tired_mood.PNG", name: "mood-tired", shape: "square", size: 160, thicken: 20 },
+  { src: "stressed_mood.PNG", name: "mood-stressed", shape: "square", size: 160, thicken: 20 },
+  { src: "sad_mood.PNG", name: "mood-down", shape: "square", size: 160, thicken: 20 },
   { src: "saved.PNG", name: "kept", shape: "square", size: 128, thicken: 0 },
   { src: "saved.PNG", name: "nav-kept", shape: "square", size: 128, thicken: 0 },
   { src: "saved.PNG", name: "empty-kept", shape: "natural", size: 240, thicken: 0 },
@@ -35,21 +43,42 @@ const OUTPUTS = [
 
 const PAD = 0.08;
 
-/** Bounding box of pixels with real ink. */
+/**
+ * Bounding box of the drawing's ink. Tiny stray specks (less than half a
+ * percent of the ink), such as a dot near the canvas edge, are ignored so they
+ * don't stretch the crop.
+ */
 async function inkBox(file) {
   const { data, info } = await sharp(file).ensureAlpha().extractChannel("alpha").raw().toBuffer({ resolveWithObject: true });
-  let minX = info.width, minY = info.height, maxX = 0, maxY = 0;
-  for (let y = 0; y < info.height; y++) {
-    for (let x = 0; x < info.width; x++) {
-      if (data[y * info.width + x] > 24) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+  const W = info.width, H = info.height;
+  const cols = new Array(W).fill(0), rows = new Array(H).fill(0);
+  let total = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (data[y * W + x] > 24) {
+        cols[x]++;
+        rows[y]++;
+        total++;
       }
     }
   }
-  return { left: minX, top: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+  const span = (counts) => {
+    const runs = [];
+    let start = -1, sum = 0;
+    counts.forEach((c, i) => {
+      if (c > 0 && start < 0) (start = i), (sum = 0);
+      if (c > 0) sum += c;
+      if ((c === 0 || i === counts.length - 1) && start >= 0) {
+        runs.push({ from: start, to: c === 0 ? i - 1 : i, sum });
+        start = -1;
+      }
+    });
+    const kept = runs.filter((r) => r.sum >= total * 0.005);
+    return [Math.min(...kept.map((r) => r.from)), Math.max(...kept.map((r) => r.to))];
+  };
+  const [left, right] = span(cols);
+  const [top, bottom] = span(rows);
+  return { left, top, width: right - left + 1, height: bottom - top + 1 };
 }
 
 async function prepare({ src, name, shape, size, thicken }) {

@@ -107,7 +107,7 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
         <footer className="card-foot">
           <ReactionBar target={{ postId: post.id }} reactions={post.reactions} people={people} readOnly={readOnly} />
           {post.kept && <Doodle name="kept" size={16} className="kept-mark" label="Kept" />}
-          {!readOnly && <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={canEdit} inScrapbook={post.inScrapbook} leaveOnDelete />}
+          {!readOnly && <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={canEdit} leaveOnDelete />}
         </footer>
       ) : (
         <CardFooter
@@ -118,7 +118,7 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
           end={
             <>
               {post.kept && <Doodle name="kept" size={16} className="kept-mark" label="Kept" />}
-              {!readOnly && <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={canEdit} inScrapbook={post.inScrapbook} />}
+              {!readOnly && <PostMenu postId={post.id} isMine={isMine} kept={post.kept} canEdit={canEdit} />}
             </>
           }
         />

@@ -5,7 +5,7 @@ import { inkStyle } from "@/lib/inks";
 import { Doodle } from "@/components/Doodle";
 import { ScrapbookEditor } from "@/components/ScrapbookEditor";
 
-export default async function ScrapPageEditor({ params }: PageProps<"/scrapbook/pages/[id]">) {
+export default async function ScrapPageEditor({ params }: PageProps<"/scrapbook/[id]">) {
   const { id } = await params;
   const [us, page] = await Promise.all([getUs(), getScrapPage(id)]);
   if (!us) return null;
@@ -13,9 +13,9 @@ export default async function ScrapPageEditor({ params }: PageProps<"/scrapbook/
 
   return (
     <main className="main wide" style={inkStyle(us.me.ink)}>
-      <Link href="/scrapbook/pages" className="back">
+      <Link href="/scrapbook" className="back">
         <Doodle name="back" size={16} />
-        Our pages
+        Scrapbook
       </Link>
       <ScrapbookEditor page={{ id: page.id, title: page.title }} initialPieces={page.pieces} spaceId={us.space.id} meId={us.me.id} myInk={us.me.ink} />
     </main>

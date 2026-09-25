@@ -25,8 +25,8 @@ export async function createScrapPage() {
     .select("id")
     .single();
   if (error) return;
-  revalidatePath("/scrapbook/pages");
-  redirect(`/scrapbook/pages/${data.id}`);
+  revalidatePath("/scrapbook");
+  redirect(`/scrapbook/${data.id}`);
 }
 
 export async function renameScrapPage(id: string, title: string): Promise<Result> {
@@ -35,7 +35,7 @@ export async function renameScrapPage(id: string, title: string): Promise<Result
   const supabase = await createClient();
   const { error } = await supabase.from("scrapbook_pages").update({ title: clean, updated_at: new Date().toISOString() }).eq("id", id);
   if (error) return { error: "The title didn't save. Try again." };
-  revalidatePath("/scrapbook/pages");
+  revalidatePath("/scrapbook");
   return {};
 }
 
@@ -47,8 +47,8 @@ export async function deleteScrapPage(formData: FormData) {
   await supabase.from("scrapbook_pages").delete().eq("id", id);
   const paths = (pieces ?? []).map((p) => p.path as string);
   if (paths.length) await supabase.storage.from("media").remove(paths);
-  revalidatePath("/scrapbook/pages");
-  redirect("/scrapbook/pages");
+  revalidatePath("/scrapbook");
+  redirect("/scrapbook");
 }
 
 export type NewPiece = {

@@ -5,7 +5,7 @@ import { addPiece, deletePiece, deleteScrapPage, renameScrapPage, updatePiece, t
 import type { Piece } from "@/lib/data";
 import { PhotoError } from "@/lib/images";
 import { INK_IDS, INKS, type Ink } from "@/lib/inks";
-import { STICKERS } from "@/lib/stickers";
+import { STICKER_GROUPS } from "@/lib/stickers";
 import { uploadGif, uploadPhoto, uploadVideo } from "@/lib/upload";
 import { Doodle, doodleUrl } from "./Doodle";
 import { PieceContent, pieceStyle } from "./PieceContent";
@@ -38,6 +38,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
   const [tray, setTray] = useState<"none" | "stickers" | "caption">("none");
   const [caption, setCaption] = useState("");
   const [editingText, setEditingText] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const [uploading, setUploading] = useState(0);
   const [error, setError] = useState<{ title: string; detail?: string } | null>(null);
   const [soundOn, setSoundOn] = useState<string | null>(null);
@@ -126,10 +127,36 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
     });
   }
 
+  // Editing a note's words. Finishing always saves, however it happens
+  // (clicking elsewhere, Enter, or Done); Escape cancels.
+  function startEditing(id: string) {
+    const piece = pieces.find((p) => p.id === id);
+    if (!piece) return;
+    setSelected(id);
+    setNoteDraft(piece.body ?? "");
+    setEditingText(id);
+  }
+
+  function finishEditing(keep = true) {
+    const id = editingText;
+    if (!id) return;
+    setEditingText(null);
+    if (!keep) return;
+    const piece = pieces.find((p) => p.id === id);
+    const body = noteDraft.trim();
+    if (!piece) return;
+    if (!body) return remove(id);
+    if (body !== piece.body) {
+      patchLocal(id, { body });
+      save(id, { body });
+    }
+  }
+
   // Dragging, resizing, turning.
   function begin(e: React.PointerEvent, id: string, mode: Drag["mode"]) {
-    if (editingText) return;
     e.stopPropagation();
+    if (editingText === id) return;
+    if (editingText) finishEditing();
     const piece = pieces.find((p) => p.id === id);
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!piece || !rect) return;
@@ -242,19 +269,26 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
 
       {tray === "stickers" && (
         <div className="sticker-tray">
-          {STICKERS.map((s) => (
-            <button
-              key={s.name}
-              type="button"
-              title={s.label}
-              aria-label={`Add ${s.label}`}
-              onClick={() => {
-                setTray("none");
-                add({ kind: "sticker", sticker: s.name, color: myInk, ...placement(s.aspect > 1.1 ? 22 : 13) });
-              }}
-            >
-              <span className="piece-sticker" style={{ "--doodle": `url(${doodleUrl(s.name)})`, aspectRatio: s.aspect } as React.CSSProperties} />
-            </button>
+          {STICKER_GROUPS.map((group) => (
+            <section key={group.title} className="sticker-group" aria-label={group.title}>
+              <h3 className="label">{group.title}</h3>
+              <div className="sticker-grid">
+                {group.stickers.map((s) => (
+                  <button
+                    key={s.name}
+                    type="button"
+                    title={s.label}
+                    aria-label={`Add ${s.label}`}
+                    onClick={() => {
+                      setTray("none");
+                      add({ kind: "sticker", sticker: s.name, color: myInk, ...placement(s.aspect > 2 ? 26 : s.aspect > 1.1 ? 22 : 13) });
+                    }}
+                  >
+                    <span className="piece-sticker" style={{ "--doodle": `url(${doodleUrl(s.name)})`, aspectRatio: s.aspect } as React.CSSProperties} />
+                  </button>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
@@ -287,8 +321,8 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
           ref={canvasRef}
           className="page-canvas"
           onPointerDown={() => {
+            if (editingText) finishEditing();
             setSelected(null);
-            setEditingText(null);
           }}
           onPointerMove={move}
           onPointerUp={end}
@@ -305,23 +339,24 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
               className={`piece kind-${p.kind}${p.id === selected ? " is-selected" : ""}`}
               style={pieceStyle(p)}
               onPointerDown={(e) => begin(e, p.id, "move")}
-              onDoubleClick={() => p.kind === "text" && setEditingText(p.id)}
+              onDoubleClick={() => p.kind === "text" && startEditing(p.id)}
             >
               {editingText === p.id ? (
                 <textarea
                   className="piece-text piece-text-edit"
-                  defaultValue={p.body ?? ""}
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
                   autoFocus
                   maxLength={300}
                   aria-label="Edit note"
+                  onFocus={(e) => e.currentTarget.setSelectionRange(e.currentTarget.value.length, e.currentTarget.value.length)}
                   onPointerDown={(e) => e.stopPropagation()}
-                  onBlur={(e) => {
-                    const body = e.target.value.trim();
-                    setEditingText(null);
-                    if (!body) return remove(p.id);
-                    if (body !== p.body) {
-                      patchLocal(p.id, { body });
-                      save(p.id, { body });
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      finishEditing();
+                    } else if (e.key === "Escape") {
+                      finishEditing(false);
                     }
                   }}
                 />
@@ -354,9 +389,12 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
           >
             Bring to front
           </button>
-          {sel.kind === "text" && (
-            <button type="button" className="b-tool" onClick={() => setEditingText(sel.id)}>Edit words</button>
-          )}
+          {sel.kind === "text" &&
+            (editingText === sel.id ? (
+              <button type="button" className="b-tool" onClick={() => finishEditing()}>Done</button>
+            ) : (
+              <button type="button" className="b-tool" onClick={() => startEditing(sel.id)}>Edit words</button>
+            ))}
           {sel.kind === "video" && (
             <button type="button" className="b-tool" onClick={() => setSoundOn(soundOn === sel.id ? null : sel.id)}>
               {soundOn === sel.id ? "Sound off" : "Sound on"}
