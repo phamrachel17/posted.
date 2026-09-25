@@ -67,7 +67,10 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
     state: embedState,
     toggle: embedToggle,
     pause: embedPause,
-  } = useSpotifyEmbed(uri, !preview && !useFull && !fullPending);
+  } = useSpotifyEmbed(uri, !preview && !spotify?.connected);
+  // Your Spotify is connected but can't play here: Spotify's embed would fail the same
+  // way, so the record falls back to the plain 30-second preview, which always plays.
+  const fullFailed = Boolean(spotify?.connected) && Boolean(fullState.problem);
   // If Spotify's player stops by itself, the record carries on with its own preview.
   const useEmbed = !useFull && !preview && embedState.ready && !embedState.failed && !embedState.stalled;
   const playing = useFull ? fullState.playing : useEmbed ? embedState.playing : audioPlaying;
@@ -77,6 +80,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const triedFullAt = useRef(0);
   const router = useRouter();
 
   // When the other person puts something on, the record changes here too.
@@ -104,6 +108,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
     if (fullPending) return;
     if (useFull && uri) {
       window.dispatchEvent(new CustomEvent("posted:play", { detail: "jukebox" }));
+      triedFullAt.current = Date.now();
       if (await fullToggle(uri)) return setError(null);
       return setError("Spotify didn't start playing. Try again, or tap the song name to open it in Spotify.");
     }
@@ -123,6 +128,14 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
       setError("The preview couldn't play here. Tap the song name to open it in Spotify.");
     }
   }
+
+  // You pressed Play and Spotify refused the whole song: start the preview instead.
+  const fullProblem = fullState.problem;
+  useEffect(() => {
+    if (!fullProblem || Date.now() - triedFullAt.current > 15_000) return;
+    triedFullAt.current = 0;
+    audioRef.current?.play().catch(() => {});
+  }, [fullProblem]);
 
   // Spotify stopped on its own: pick up with the preview from about the same spot.
   const stalled = embedState.stalled;
@@ -219,7 +232,10 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
         </p>
       )}
       {fullState.problem === "error" && (
-        <p className="hint jukebox-note">Spotify ran into a problem playing this. Reload the page and try again.</p>
+        <p className="hint jukebox-note">
+          Spotify wouldn&rsquo;t play the whole song here, so this is the 30-second preview. If the Spotify app on this
+          computer can&rsquo;t play full songs either, the problem is with Spotify or this network, not posted.
+        </p>
       )}
       {fullState.problem === "signed-out" && (
         <p className="hint jukebox-note">
@@ -267,7 +283,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
           onError={() => setError("The preview couldn't load. Tap the song name to open it in Spotify.")}
         />
       )}
-      {!useFull && !fullPending && !useEmbed && current?.preview && <span className="hint">A 30-second preview. Tap the song name for the whole thing in Spotify.</span>}
+      {!useFull && !fullPending && !useEmbed && !fullFailed && current?.preview && <span className="hint">A 30-second preview. Tap the song name for the whole thing in Spotify.</span>}
 
       {changing ? (
         <form
