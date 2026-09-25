@@ -53,7 +53,7 @@ export type FullPlayerState = {
   /** The player is connected and can play. */
   ready: boolean;
   /** Why it can't: Spotify refused the account (usually not Premium), the browser isn't supported, or sign-in expired. */
-  problem: "not-premium" | "unsupported" | "signed-out" | "error" | null;
+  problem: "not-premium" | "unsupported" | "signed-out" | "protected-content" | "error" | null;
   playing: boolean;
   /** 0–1 */
   progress: number;
@@ -90,6 +90,12 @@ export function useSpotifyPlayer(enabled: boolean) {
           cached = null;
           setState((s) => ({ ...s, ready: false, problem: "signed-out" }));
         }) as never);
+        // Spotify couldn't decode the song (Chrome's protected content / Widevine), or the browser blocked sound.
+        p.addListener("playback_error", (({ message }: { message: string }) => {
+          console.error("Spotify playback error:", message);
+          setState((s) => ({ ...s, problem: /eme|drm|widevine|protected|decrypt|key/i.test(message) ? "protected-content" : "error" }));
+        }) as never);
+        p.addListener("autoplay_failed", (() => setState((s) => ({ ...s, playing: false }))) as never);
         p.addListener("player_state_changed", ((st: SdkState | null) => {
           if (!st) return setState((s) => ({ ...s, playing: false }));
           loadedUri.current = st.track_window.current_track ? loadedUri.current : null;

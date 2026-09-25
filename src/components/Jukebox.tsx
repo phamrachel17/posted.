@@ -204,6 +204,15 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
       {fullState.problem === "unsupported" && (
         <p className="hint jukebox-note">Whole songs play in a computer browser. On your phone, tap the song name to open it in Spotify.</p>
       )}
+      {fullState.problem === "protected-content" && (
+        <p className="hint jukebox-note">
+          This browser couldn&rsquo;t play Spotify&rsquo;s protected audio. In Chrome, turn on Settings → Privacy and security →
+          Site settings → Protected content, then reload.
+        </p>
+      )}
+      {fullState.problem === "error" && (
+        <p className="hint jukebox-note">Spotify ran into a problem playing this. Reload the page and try again.</p>
+      )}
       {fullState.problem === "signed-out" && (
         <p className="hint jukebox-note">
           Spotify needs you to sign in again. <a href="/api/spotify/login?back=/">Reconnect Spotify</a>.
