@@ -15,6 +15,8 @@ export const DAY_PROMPTS = [
   { key: "grateful", label: "Grateful for" },
 ] as const;
 
+export const MAX_DAY_NOTE = 2000;
+
 /** Prompts from before the switch to moods, so older days still show everything. */
 export const LEGACY_PROMPTS = [
   { key: "today", label: "Today" },

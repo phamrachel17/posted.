@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isAvatarIcon, isAvatarPath } from "@/lib/avatars";
 import { getUs } from "@/lib/data";
 import { friendlyError, readProfile, type FormState } from "@/lib/forms";
 
@@ -96,4 +97,33 @@ export async function updateLetter(_prev: FormState, formData: FormData): Promis
   if (error) return { error: friendlyError(error) };
   revalidatePath("/settings");
   return { ok: true, message: hour === null ? "The daily letter is off." : "Saved." };
+}
+
+/**
+ * Sets your profile picture or icon. A new picture replaces the icon and the old
+ * picture; picking an icon (or neither, for your initial) removes the picture.
+ */
+export async function setAvatar(choice: { path: string } | { icon: string } | null): Promise<{ error?: string }> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again to change your picture." };
+
+  let update: { avatar_path: string | null; avatar_icon: string | null };
+  if (choice && "path" in choice) {
+    if (!isAvatarPath(choice.path, us.space.id)) return { error: "That picture didn't upload properly. Try again." };
+    update = { avatar_path: choice.path, avatar_icon: null };
+  } else if (choice && "icon" in choice) {
+    if (!isAvatarIcon(choice.icon)) return { error: "Pick one of the drawings." };
+    update = { avatar_path: null, avatar_icon: choice.icon };
+  } else {
+    update = { avatar_path: null, avatar_icon: null };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("members").update(update).eq("id", us.me.id);
+  if (error) return { error: "Your picture didn't save. Try again." };
+
+  const old = us.me.avatar_path;
+  if (old && old !== update.avatar_path) await supabase.storage.from("media").remove([old]);
+  revalidatePath("/", "layout");
+  return {};
 }

@@ -4,7 +4,7 @@ import { TodayView } from "@/components/TodayView";
 import { PresenceProvider } from "@/components/Presence";
 import { inkStyle } from "@/lib/inks";
 import { localStamp } from "@/lib/time";
-import type { Member, NotebookRef, Post, Us } from "@/lib/types";
+import type { Member, Post, Us } from "@/lib/types";
 
 // Sample content for looking at the design without a database.
 // Only available in development.
@@ -30,14 +30,15 @@ export default function PreviewPage() {
   const me: Member = {
     id: "rachel", space_id: "s", user_id: "u1", display_name: "Rachel", ink: "blue", city: "Brooklyn",
     timezone: "America/New_York", last_seen_at: new Date(now.getTime() - 20 * HOUR).toISOString(), daily_letter_hour: null,
+    avatar_path: null, avatar_icon: null,
   };
   const partner: Member = {
     id: "arya", space_id: "s", user_id: "u2", display_name: "Arya", ink: "verdigris", city: "Seattle",
     timezone: "America/Los_Angeles", last_seen_at: null, daily_letter_hour: null,
+    avatar_path: null, avatar_icon: "st-flower",
   };
   const visit = new Date(now.getTime() + 18 * 24 * HOUR).toISOString().slice(0, 10);
   const us: Us = { me, partner, space: { id: "s", name: null, next_visit_on: visit, next_visit_place: "Seattle" } };
-  const spanish: NotebookRef = { id: "nb1", slug: "spanish", name: "Spanish", doodle: "nb-language", kind: "lessons" };
 
   const post = (id: string, who: Member, hoursAgo: number, rest: Partial<Post>): Post => {
     const created = new Date(now.getTime() - hoursAgo * HOUR);
@@ -57,6 +58,7 @@ export default function PreviewPage() {
         highlight: "Presented the migration plan. Nobody asked the question I was dreading.",
         accomplished: "Finally finished the onboarding doc.",
         grateful: "The guy with the three corgis.",
+        note: "Walked home the long way along the canal. The light was doing that thing again.",
       },
     }),
     post("p2", partner, 7, {
@@ -67,7 +69,7 @@ export default function PreviewPage() {
       body: "Question for Sunday: why is it “estoy cansada” and not “soy cansada”? I've been saying it wrong for a month.",
     }),
     post("p4", me, 24, {
-      kind: "photo", body: "First persimmons at the market. Saving you the ugliest one.",
+      kind: "photo", body: "First persimmons at the market. Saving you the ugliest one. Listening to this on the walk home:\nhttps://open.spotify.com/album/1mJFgPeuLhU1PzLNBURdJC?si=19a4hlvKTSWKJeVqmHgjeg",
       photos: [{ id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 560, height: 800 }],
       reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
       latestReply: { id: "r1", author_id: "arya", body: "The ugliest one is the best one.", hasAudio: false },
@@ -98,13 +100,6 @@ export default function PreviewPage() {
           us={us}
           posts={posts}
           now={now}
-          lesson={{
-            id: "l8", author_id: "rachel", created_at: now.toISOString(), notebook: spanish,
-            meta: {
-              n: 8, date: new Date(now.getTime() + ((7 - now.getDay()) % 7) * 24 * HOUR).toISOString().slice(0, 10), teacher_id: "rachel",
-              topics: [], vocab: [], homework: [], questions: [{ text: "estoy vs. soy", by: "arya" }],
-            },
-          }}
           preview
           jukebox={{
             current: {

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUs } from "@/lib/data";
+import { MAX_DAY_NOTE } from "@/lib/day";
 import { EMOJI, type DayMeta, type Emoji, type Mood } from "@/lib/types";
 
 export type NewPhoto = { path: string; width: number; height: number; mime: string };
@@ -42,15 +43,19 @@ function audioMedia(audio: NewAudio) {
 }
 
 function cleanDay(meta: DayMeta): DayMeta | null {
-  if (!meta.mood || !MOODS.includes(meta.mood)) return null;
-  const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 1000) : undefined);
+  const mood = meta.mood && MOODS.includes(meta.mood) ? meta.mood : undefined;
+  const text = (v: unknown, max = 1000) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
+  const note = text(meta.note, MAX_DAY_NOTE);
+  // A day needs a mood or a note; everything else is optional.
+  if (!mood && !note) return null;
   const energy = typeof meta.energy === "number" && meta.energy >= 1 && meta.energy <= 5 ? Math.round(meta.energy) : undefined;
   return {
-    mood: meta.mood,
+    mood,
     energy,
     highlight: text(meta.highlight),
     accomplished: text(meta.accomplished),
     grateful: text(meta.grateful),
+    note,
   };
 }
 
@@ -71,7 +76,7 @@ export async function createPost(input: {
   const audio = input.audio ?? null;
   const day = input.day ? cleanDay(input.day) : null;
 
-  if (input.day && !day) return { error: "Pick a mood for your day." };
+  if (input.day && !day) return { error: "Pick a mood or write a note for your day." };
   if (day && input.notebookId) return { error: "My day posts go to Today, not a notebook." };
   if (!body && !photos.length && !audio && !day) return { error: "Write something or add a photo first." };
   if (body.length > 10_000) return { error: "That's longer than a post can be. Try splitting it in two." };
@@ -102,7 +107,7 @@ export async function updateDay(postId: string, meta: DayMeta, dayDate: string):
   const us = await getUs();
   if (!us) return { error: "Sign in again to edit." };
   const day = cleanDay(meta);
-  if (!day) return { error: "Pick a mood for your day." };
+  if (!day) return { error: "Pick a mood or write a note for your day." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dayDate)) return { error: "Pick which day this is for." };
 
   const supabase = await createClient();

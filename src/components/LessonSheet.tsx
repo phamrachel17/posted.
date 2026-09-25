@@ -1,20 +1,27 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveLesson } from "@/app/actions/notebooks";
+import { deleteLesson, saveLesson } from "@/app/actions/notebooks";
 import { inkStyle } from "@/lib/inks";
 import type { People } from "@/lib/people";
 import { longDate } from "@/lib/time";
 import type { LessonMeta } from "@/lib/types";
 import { Doodle } from "./Doodle";
 
-type Props = { postId: string; meta: LessonMeta; people: People; readOnly?: boolean };
+type Props = {
+  postId: string;
+  meta: LessonMeta;
+  people: People;
+  readOnly?: boolean;
+  /** Set when you created this lesson, so you can delete it. */
+  deleteFrom?: string;
+};
 
 /**
  * A lesson page both people can fill in. Checking homework and adding
  * questions save right away; everything else is under Edit.
  */
-export function LessonSheet({ postId, meta: initial, people, readOnly }: Props) {
+export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFrom }: Props) {
   const [meta, setMeta] = useState<LessonMeta>(initial);
   const [editing, setEditing] = useState(false);
   const [question, setQuestion] = useState("");
@@ -134,6 +141,21 @@ export function LessonSheet({ postId, meta: initial, people, readOnly }: Props) 
         <div className="sheet-head-side">
           {teacher && <span className="hint">Taught by {teacher.name}</span>}
           {!readOnly && <button type="button" className="btn" onClick={() => setEditing(true)}>Edit</button>}
+          {!readOnly && deleteFrom && (
+            <details className="nb-menu">
+              <summary aria-label="Lesson options">
+                <Doodle name="more" size={20} />
+              </summary>
+              <div className="post-menu-panel">
+                <form action={deleteLesson} className="menu-confirm">
+                  <input type="hidden" name="id" value={postId} />
+                  <input type="hidden" name="slug" value={deleteFrom} />
+                  <span>Delete Lesson {meta.n}? Its vocabulary, homework, and notes go with it. Unanswered questions move to your latest lesson.</span>
+                  <button type="submit" className="btn btn-danger">Delete lesson</button>
+                </form>
+              </div>
+            </details>
+          )}
         </div>
       </div>
 

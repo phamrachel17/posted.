@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DAY_PROMPTS, MOODS } from "@/lib/day";
+import { DAY_PROMPTS, MAX_DAY_NOTE, MOODS } from "@/lib/day";
 import { dayKey } from "@/lib/time";
 import type { DayMeta } from "@/lib/types";
 import { Doodle } from "./Doodle";
@@ -25,9 +25,10 @@ type Props = {
   timeZone: string;
 };
 
-/** Mood, energy, the three prompts, and which day it's for. Used to post and to edit a My day. */
+/** Mood, energy, the three prompts, a note, and which day it's for. Used to post and to edit a My day. */
 export function DayFields({ value, onChange, date, onDate, timeZone }: Props) {
   const [open, setOpen] = useState<string[]>(() => DAY_PROMPTS.filter((p) => value[p.key]).map((p) => p.key));
+  const [noteOpen, setNoteOpen] = useState(() => Boolean(value.note));
   const { today, yesterday, earliest } = dayBounds(timeZone);
 
   return (
@@ -86,13 +87,32 @@ export function DayFields({ value, onChange, date, onDate, timeZone }: Props) {
           />
         </div>
       ))}
-      {DAY_PROMPTS.some((p) => !open.includes(p.key)) && (
+      {noteOpen && (
+        <div className="field">
+          <label className="label" htmlFor="day-note">A note</label>
+          <textarea
+            id="day-note"
+            rows={3}
+            maxLength={MAX_DAY_NOTE}
+            autoFocus={!value.note}
+            placeholder="Anything else about the day"
+            value={value.note ?? ""}
+            onChange={(e) => onChange({ ...value, note: e.target.value })}
+          />
+        </div>
+      )}
+      {(DAY_PROMPTS.some((p) => !open.includes(p.key)) || !noteOpen) && (
         <div className="chips">
           {DAY_PROMPTS.filter((p) => !open.includes(p.key)).map((p) => (
             <button key={p.key} type="button" className="chip" onClick={() => setOpen((o) => [...o, p.key])}>
               + {p.label}
             </button>
           ))}
+          {!noteOpen && (
+            <button type="button" className="chip" onClick={() => setNoteOpen(true)}>
+              + A note
+            </button>
+          )}
         </div>
       )}
     </>

@@ -2,17 +2,21 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { updatePostBody, updateReplyBody } from "@/app/actions/posts";
+import { splitSpotify } from "@/lib/spotify-links";
 import { EDIT_EVENT } from "./PostMenu";
+import { SpotifyEmbeds } from "./SpotifyEmbeds";
 
 type Props = {
   postId: string;
   body: string | null;
   kind?: "post" | "reply";
   className?: string;
+  /** Show Spotify links as players. Off for one-line previews. */
+  embeds?: boolean;
 };
 
 /** Post or note text, which its author can edit in place from the "..." menu. */
-export function PostBody({ postId, body, kind = "post", className = "post-body" }: Props) {
+export function PostBody({ postId, body, kind = "post", className = "post-body", embeds = true }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(body ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +32,17 @@ export function PostBody({ postId, body, kind = "post", className = "post-body" 
     return () => window.removeEventListener(EDIT_EVENT, onEdit);
   }, [postId, body]);
 
-  if (!editing) return body ? <p className={className}>{body}</p> : null;
+  if (!editing) {
+    if (!body) return null;
+    const { text, links } = splitSpotify(body);
+    if (!embeds) return <p className={className}>{text || "A Spotify link"}</p>;
+    return (
+      <>
+        {text && <p className={className}>{text}</p>}
+        <SpotifyEmbeds links={links} />
+      </>
+    );
+  }
 
   return (
     <form

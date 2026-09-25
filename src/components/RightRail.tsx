@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { inkStyle } from "@/lib/inks";
 import { clockTime, daysUntil, localStamp, longDate, spokenTime } from "@/lib/time";
 import { conditions, distanceKm, formatDistance, formatTemp, geocode, usesImperial, type Conditions } from "@/lib/weather";
-import type { LessonSummary, Song } from "@/lib/data";
-import type { Member, NotebookRef, Us } from "@/lib/types";
+import type { Song } from "@/lib/data";
+import type { Member, Us } from "@/lib/types";
+import { Avatar } from "./Avatar";
 import { Doodle } from "./Doodle";
 import { Jukebox } from "./Jukebox";
 import { LiveClock } from "./LiveClock";
@@ -14,7 +14,6 @@ export type JukeboxData = { current: Song | null; earlier: Song[] };
 type Props = {
   us: Us;
   now: Date;
-  lesson: (LessonSummary & { notebook: NotebookRef }) | null;
   jukebox?: JukeboxData | null;
   preview?: boolean;
 };
@@ -33,7 +32,7 @@ function Clock({ m, label, now, weather, imperial, online }: { m: Member; label:
   return (
     <div className="clock-block" style={inkStyle(m.ink)}>
       <div className="clock">
-        <span className="ink-dot" />
+        <Avatar name={m.display_name} ink={m.ink} url={m.avatar_url} icon={m.avatar_icon} size={30} />
         <span className="clock-who">
           {label} · {m.city}
           {online && <OnlineDot memberId={m.id} label={m.display_name} />}
@@ -45,12 +44,10 @@ function Clock({ m, label, now, weather, imperial, online }: { m: Member; label:
   );
 }
 
-export async function RightRail({ us, now, lesson, jukebox, preview }: Props) {
+export async function RightRail({ us, now, jukebox, preview }: Props) {
   const { me, partner, space } = us;
   const imperial = usesImperial(me.timezone);
   const days = space.next_visit_on ? daysUntil(space.next_visit_on, me.timezone, now) : null;
-  const lessonDays = lesson ? daysUntil(lesson.meta.date, me.timezone, now) : null;
-  const partnerQuestion = lesson?.meta.questions?.some((q) => q.by === partner?.id && !q.answered);
 
   // Weather and distance; any of these can come back null and the rail simply leaves it out.
   const [myPlace, theirPlace] = await Promise.all([
@@ -109,16 +106,6 @@ export async function RightRail({ us, now, lesson, jukebox, preview }: Props) {
         </div>
       )}
 
-      {lesson && lessonDays !== null && lessonDays >= 0 && (
-        <div className="rail-box">
-          <span className="label">Sunday lesson</span>
-          <Link href={`/n/${lesson.notebook.slug}/lessons/${lesson.meta.n}`} className="lesson-mini">
-            <b>Lesson {lesson.meta.n}</b>
-            <span className="hint">{longDate(lesson.meta.date)}</span>
-            {partnerQuestion && partner && <span>{partner.display_name} added a question for Sunday.</span>}
-          </Link>
-        </div>
-      )}
     </aside>
   );
 }

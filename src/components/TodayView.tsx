@@ -1,8 +1,7 @@
 import { inkStyle } from "@/lib/inks";
 import { peopleOf } from "@/lib/people";
 import { dayHeading, dayKey } from "@/lib/time";
-import type { LessonSummary } from "@/lib/data";
-import type { NotebookRef, Post, Us } from "@/lib/types";
+import type { Post, Us } from "@/lib/types";
 import { Composer } from "./Composer";
 import { Doodle } from "./Doodle";
 import { FeedList } from "./FeedList";
@@ -12,7 +11,6 @@ type Props = {
   us: Us;
   posts: Post[];
   now: Date;
-  lesson?: (LessonSummary & { notebook: NotebookRef }) | null;
   olderHref?: string | null;
   jukebox?: JukeboxData | null;
   /** Showing an older page: no composer, no "last here" line. */
@@ -21,7 +19,7 @@ type Props = {
   preview?: boolean;
 };
 
-export function TodayView({ us, posts, now, lesson, olderHref, older, startRecording, preview, jukebox }: Props) {
+export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox }: Props) {
   const { me, partner } = us;
   const todayKey = dayKey(now, me.timezone);
   const today = dayHeading(todayKey, todayKey);
@@ -56,7 +54,7 @@ export function TodayView({ us, posts, now, lesson, olderHref, older, startRecor
           headTodayGroup={older}
         />
       </main>
-      <RightRail us={us} now={now} lesson={lesson ?? null} jukebox={jukebox} preview={preview} />
+      <RightRail us={us} now={now} jukebox={jukebox} preview={preview} />
     </>
   );
 }

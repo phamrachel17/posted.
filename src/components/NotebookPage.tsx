@@ -89,7 +89,13 @@ export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: 
           </nav>
           <div className="lesson-main">
             {lesson ? (
-              <LessonSheet key={lesson.id} postId={lesson.id} meta={lesson.meta as LessonMeta} people={people} />
+              <LessonSheet
+                key={lesson.id}
+                postId={lesson.id}
+                meta={lesson.meta as LessonMeta}
+                people={people}
+                deleteFrom={lesson.author_id === us.me.id ? notebook.slug : undefined}
+              />
             ) : (
               <div className="empty">
                 <Doodle name="empty-lessons" size={170} height={151} />

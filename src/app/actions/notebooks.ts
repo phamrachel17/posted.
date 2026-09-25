@@ -146,6 +146,39 @@ export async function createLesson(formData: FormData) {
   redirect(`/n/${slug}/lessons/${meta.n}`);
 }
 
+/** Delete a lesson you created. Its unanswered questions move to the newest lesson left, so they aren't lost. */
+export async function deleteLesson(formData: FormData) {
+  const us = await getUs();
+  if (!us) return;
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+
+  const supabase = await createClient();
+  const { data: lesson } = await supabase
+    .from("posts")
+    .select("id, notebook_id, meta")
+    .eq("id", id)
+    .eq("kind", "lesson")
+    .eq("author_id", us.me.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!lesson?.notebook_id) return;
+
+  const { error } = await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id).eq("author_id", us.me.id);
+  if (error) return;
+
+  const open = ((lesson.meta as LessonMeta).questions ?? []).filter((q) => !q.answered);
+  const newest = (await getLessons(lesson.notebook_id))[0];
+  if (open.length && newest) {
+    await supabase.rpc("update_lesson", {
+      p_post_id: newest.id,
+      p_meta: { ...newest.meta, questions: [...(newest.meta.questions ?? []), ...open] },
+    });
+  }
+  revalidatePath("/", "layout");
+  redirect(`/n/${encodeURIComponent(slug)}`);
+}
+
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 export async function saveLesson(postId: string, meta: LessonMeta): Promise<{ error?: string }> {

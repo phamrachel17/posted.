@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { getUs } from "@/lib/data";
 import { signOut } from "@/app/actions/auth";
+import { AvatarPicker } from "@/components/AvatarPicker";
 import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
 
 async function origin() {
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
 
       <section aria-labelledby="you">
         <h2 id="you" className="label">You</h2>
+        <AvatarPicker spaceId={space.id} name={me.display_name} ink={me.ink} url={me.avatar_url ?? null} icon={me.avatar_icon} />
         <ProfileForm
           defaults={{ display_name: me.display_name, ink: me.ink, city: me.city, timezone: me.timezone }}
           takenInk={partner?.ink ?? null}

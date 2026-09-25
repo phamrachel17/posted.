@@ -572,6 +572,60 @@ h3.label {
   gap: 6px;
   flex-wrap: wrap;
 }
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ink-wash);
+  color: var(--ink-c);
+  box-shadow: inset 0 0 0 1.5px var(--ink-c);
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.avatar-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.avatar-picker-now {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.avatar-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.avatar-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.avatar-icons button {
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.avatar-icons button[aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.avatar-icons button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
 .ink-dot {
   width: 9px;
   height: 9px;
@@ -767,6 +821,18 @@ h3.label {
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.spotify-embeds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.spotify-embed {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--paper);
 }
 .photos {
   display: grid;
@@ -996,14 +1062,20 @@ h3.label {
   top: 30px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
   padding-top: 112px;
 }
 .rail-box {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   min-width: 200px;
+}
+/* Each section gets room and a quiet rule, so they don't run together. */
+.rail-box + .rail-box {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--rule);
 }
 .clock {
   display: grid;
@@ -1574,6 +1646,13 @@ button.chip:hover {
   font-family: var(--serif);
   font-size: 16.5px;
   line-height: 1.45;
+}
+.day-note {
+  font-family: var(--serif);
+  font-size: 16.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .lesson-summary {
   display: flex;
@@ -2246,28 +2325,6 @@ button.chip:hover {
   min-width: 180px;
 }
 
-/* ---------- Rail extras ---------- */
-.lesson-mini {
-  border: 1px solid var(--rule);
-  background: var(--card);
-  border-radius: 6px;
-  padding: 12px 14px;
-  font-size: 13.5px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-decoration: none;
-  color: var(--ink);
-}
-.lesson-mini b {
-  font-family: var(--serif);
-  font-size: 17px;
-  font-weight: 500;
-}
-.lesson-mini:hover {
-  border-color: var(--ink-3);
-}
-
 /* ---------- Kept ---------- */
 /* Every page opens the same way as Today: title, optional line, then a rule. */
 .page-head {
@@ -2619,7 +2676,7 @@ button.chip:hover {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding-left: 19px;
+  padding-left: 40px;
   font-size: 12.5px;
   color: var(--ink-3);
 }
@@ -2653,7 +2710,7 @@ button.chip:hover {
 .jukebox {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 .jukebox-top {
   position: relative;

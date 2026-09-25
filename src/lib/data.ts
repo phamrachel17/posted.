@@ -33,12 +33,16 @@ export const getUs = cache(async (): Promise<Us | null> => {
   const supabase = await createClient();
   const { data: members, error } = await supabase
     .from("members")
-    .select("id, space_id, user_id, display_name, ink, city, timezone, last_seen_at, daily_letter_hour");
+    .select("id, space_id, user_id, display_name, ink, city, timezone, last_seen_at, daily_letter_hour, avatar_path, avatar_icon");
   if (error) throw error;
 
-  const me = (members as Member[]).find((m) => m.user_id === userId);
+  const people = members as Member[];
+  const avatars = await signPaths(supabase, people.flatMap((m) => (m.avatar_path ? [m.avatar_path] : [])));
+  for (const m of people) m.avatar_url = m.avatar_path ? (avatars.get(m.avatar_path) ?? null) : null;
+
+  const me = people.find((m) => m.user_id === userId);
   if (!me) return null;
-  const partner = (members as Member[]).find((m) => m.user_id !== userId) ?? null;
+  const partner = people.find((m) => m.user_id !== userId) ?? null;
 
   const { data: space, error: spaceError } = await supabase
     .from("spaces")
@@ -233,24 +237,6 @@ export async function getLessons(notebookId: string): Promise<LessonSummary[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data as LessonSummary[]).sort((a, b) => (b.meta.n ?? 0) - (a.meta.n ?? 0));
-}
-
-/** The newest lesson in any lesson notebook, for the Today rail. */
-export async function getLatestLesson(): Promise<(LessonSummary & { notebook: NotebookRef }) | null> {
-  const notebooks = (await getNotebooks()).filter((n) => n.kind === "lessons");
-  if (!notebooks.length) return null;
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("posts")
-    .select("id, author_id, meta, created_at, notebook:notebooks!posts_notebook_id_space_id_fkey(id, slug, name, doodle, kind)")
-    .in("notebook_id", notebooks.map((n) => n.id))
-    .eq("kind", "lesson")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return data as unknown as (LessonSummary & { notebook: NotebookRef }) | null;
 }
 
 // ---------------------------------------------------------------------------

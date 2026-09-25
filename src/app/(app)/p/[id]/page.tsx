@@ -4,6 +4,7 @@ import { getPost, getUs } from "@/lib/data";
 import { inkStyle } from "@/lib/inks";
 import { peopleOf } from "@/lib/people";
 import { exactTime, localStamp, spokenTime } from "@/lib/time";
+import { Avatar } from "@/components/Avatar";
 import { Doodle } from "@/components/Doodle";
 import { PostBody } from "@/components/PostBody";
 import { PostCard } from "@/components/PostCard";
@@ -40,6 +41,7 @@ export default async function PostPage({ params }: PageProps<"/p/[id]">) {
             return (
               <li key={reply.id} className="note" style={who ? inkStyle(who.ink) : undefined}>
                 <div className="author-line">
+                  {who && <Avatar name={who.name} ink={who.ink} url={who.avatarUrl} icon={who.avatarIcon} size={26} />}
                   <b>{who?.name ?? "Someone"}</b>
                   <time dateTime={reply.created_at} title={exactTime(reply.created_at, us.me.timezone)}>
                     {spokenTime(reply.created_at, localStamp(new Date(reply.created_at), who?.timezone ?? us.me.timezone), us.me.timezone, now)}
@@ -59,7 +61,7 @@ export default async function PostPage({ params }: PageProps<"/p/[id]">) {
         </ol>
       )}
 
-      <WriteBack postId={post.id} spaceId={us.space.id} partnerName={us.partner?.display_name} />
+      <WriteBack postId={post.id} spaceId={us.space.id} partnerName={post.author_id === us.me.id ? undefined : us.partner?.display_name} />
     </main>
   );
 }

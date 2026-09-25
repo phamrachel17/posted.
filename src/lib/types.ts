@@ -10,6 +10,10 @@ export type Member = {
   timezone: string;
   last_seen_at: string | null;
   daily_letter_hour: number | null;
+  avatar_path: string | null;
+  avatar_icon: string | null;
+  /** A signed link to the picture, filled in when members are loaded. */
+  avatar_url?: string | null;
 };
 
 export type Space = {
@@ -65,6 +69,8 @@ export type DayMeta = {
   highlight?: string;
   accomplished?: string;
   grateful?: string;
+  /** Anything else about the day, in your own words. */
+  note?: string;
   /** Older days, from before moods replaced the weather. */
   weather?: Weather;
   today?: string;

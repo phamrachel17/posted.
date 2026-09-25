@@ -140,7 +140,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const ready = photos.filter((p) => p.photo).map((p) => p.photo!);
   const canPost =
     !preview && !pending &&
-    (mode === "day" ? Boolean(day.mood) : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
+    (mode === "day" ? Boolean(day.mood || day.note?.trim()) : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
 
   function submit() {
     if (!canPost) return;
@@ -202,7 +202,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
       <form className="composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <div className="day-compose-head">
           <b>My day</b>
-          <span className="hint">Only the mood is needed</span>
+          <span className="hint">A mood or a note is enough</span>
         </div>
         <DayFields value={day} onChange={setDay} date={dayDate} onDate={setDayDate} timeZone={zone} />
         {error && <p className="error-note"><b>{error}</b></p>}
