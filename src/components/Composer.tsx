@@ -13,7 +13,7 @@ import { DayFields, dayBounds } from "./DayFields";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Stamp } from "./Stamp";
 import { StampChooser } from "./StampChooser";
-import { DEFAULT_STAMP, stampView, type BookStamp } from "@/lib/stamps";
+import { DEFAULT_STAMP, FALLBACK_STAMP, stampView, type BookStamp, type CityStamp } from "@/lib/stamps";
 import type { People } from "@/lib/people";
 
 const MAX_PHOTOS = 6;
@@ -46,7 +46,7 @@ type Props = {
   /** Your time zone, for picking which day a My day is for. */
   timeZone?: string;
   /** Postage stamps, for posts to Today. Omit where posts don't get stamps. */
-  stamps?: { book: BookStamp[]; defaultStamp: string | null; people: People };
+  stamps?: { book: BookStamp[]; defaultStamp: string | null; people: People; city: CityStamp | null };
 };
 
 export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone, stamps }: Props) {
@@ -72,7 +72,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const stamped = Boolean(stamps) && !target;
   const stampToSend = stamped ? stamp : null;
   const stampUrls = Object.fromEntries(book.map((b) => [b.path, b.url]));
-  const currentStamp = stampView(stamp, stampUrls) ?? stampView(DEFAULT_STAMP, {});
+  const currentStamp = stampView(stamp, stampUrls, { mine: stamps?.city }) ?? stampView(FALLBACK_STAMP, {});
 
   useEffect(() => {
     const draft = storage(draftKey);
@@ -216,10 +216,11 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         book={book}
         onBookChange={setBook}
         people={stamps.people}
+        city={stamps.city}
         postFiles={mode === "write" ? photos.map((p) => ({ id: p.id, file: p.file, preview: p.preview })) : []}
         preview={preview}
       />
-      <span className="hint">Just for this post. Your usual stamp is set in You two.</span>
+      <span className="hint">Just for this post. Your usual stamp, your city unless you pick another, is set in Settings.</span>
     </div>
   );
 

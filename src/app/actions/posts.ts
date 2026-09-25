@@ -93,7 +93,7 @@ export async function createPost(input: {
   ];
 
   // Only posts to Today carry a stamp. A bad one is dropped rather than blocking the post.
-  const stamp = !input.notebookId && input.stamp ? await validStamp(input.stamp, us.space.id) : null;
+  const stamp = !input.notebookId && input.stamp ? await validStamp(input.stamp, us.space.id, us.me.city) : null;
   const meta = {
     ...(day ?? {}),
     ...(day && input.dayDate && /^\d{4}-\d{2}-\d{2}$/.test(input.dayDate) ? { day: input.dayDate } : {}),

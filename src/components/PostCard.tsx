@@ -58,7 +58,7 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
   const partnerName = partnerId && !isMine ? people.byId[partnerId].name : undefined;
 
   return (
-    <article className={detail ? "card card-detail" : "card"} style={author ? inkStyle(author.ink) : undefined}>
+    <article className={["card", detail && "card-detail", isNew && "is-landing"].filter(Boolean).join(" ")} style={author ? inkStyle(author.ink) : undefined}>
       <header className="author-line">
         {author && <Avatar name={author.name} ink={author.ink} url={author.avatarUrl} size={30} />}
         <b>{author?.name ?? "Someone"}</b>

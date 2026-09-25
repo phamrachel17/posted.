@@ -4,6 +4,7 @@ import { createClient } from "./supabase/server";
 import type { Ink } from "./inks";
 import { spotifyMeta } from "./spotify";
 import { parseStamp, stampView, type BookStamp } from "./stamps";
+import { cityPhoto } from "./city-photo";
 import type {
   Audio,
   LessonMeta,
@@ -131,7 +132,16 @@ async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]
     const s = r.notebook ? null : parseStamp(r.meta?.stamp);
     return s?.kind === "photo" ? [s.path] : [];
   });
-  const urls = await signPaths(supabase, [...rows.flatMap((r) => r.media.map((m) => m.path)), ...stampPaths]);
+  // City stamps: one photo lookup per city (cached for a month).
+  const cityTz = new Map<string, string>();
+  for (const r of rows) {
+    const s = r.notebook ? null : parseStamp(r.meta?.stamp);
+    if (s?.kind === "city" && s.city) cityTz.set(s.city, r.postmark?.tz ?? "UTC");
+  }
+  const [urls, cityPhotos] = await Promise.all([
+    signPaths(supabase, [...rows.flatMap((r) => r.media.map((m) => m.path)), ...stampPaths]),
+    Promise.all([...cityTz].map(async ([city, tz]) => [city, await cityPhoto(city, tz)] as const)).then((e) => Object.fromEntries(e)),
+  ]);
   return rows.map(({ media, replies, keeps, ...post }) => {
     const live = replies.filter((r) => !r.deleted_at).sort((a, b) => b.created_at.localeCompare(a.created_at));
     const last = live[0];
@@ -142,7 +152,7 @@ async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]
       latestReply: last ? { id: last.id, author_id: last.author_id, body: last.body, hasAudio: last.media.some((m) => m.type === "audio") } : null,
       // RLS only returns my own keeps, so any row means I kept it.
       kept: keeps.length > 0,
-      stamp: post.notebook ? null : stampView(post.meta?.stamp, urls),
+      stamp: post.notebook ? null : stampView(post.meta?.stamp, urls, { photos: cityPhotos }),
     };
   });
 }

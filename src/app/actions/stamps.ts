@@ -39,11 +39,18 @@ export async function removeStamp(id: string): Promise<Result> {
   return {};
 }
 
-/** Checks a stamp is a real design or a photo in this space's book. */
-export async function validStamp(value: unknown, spaceId: string): Promise<string | null> {
+/**
+ * Checks a stamp is a real design, a photo in this space's book, or a city. "city"
+ * (your own city) becomes that city's name, so the post keeps it if you move.
+ */
+export async function validStamp(value: unknown, spaceId: string, myCity?: string): Promise<string | null> {
   const s = parseStamp(value);
   if (!s) return null;
   if (s.kind === "design") return `design:${s.id}`;
+  if (s.kind === "city") {
+    const city = s.city ?? myCity;
+    return city ? `city:${city}` : null;
+  }
   if (!isStampPath(s.path, spaceId)) return null;
   const supabase = await createClient();
   const { data } = await supabase.from("stamps").select("id").eq("path", s.path).maybeSingle();
@@ -53,8 +60,9 @@ export async function validStamp(value: unknown, spaceId: string): Promise<strin
 export async function setDefaultStamp(value: string): Promise<Result> {
   const us = await getUs();
   if (!us) return { error: "Sign in again." };
-  const stamp = await validStamp(value, us.space.id);
-  if (!stamp) return { error: "Pick one of the stamps." };
+  // Your city is the default, stored as no choice at all, so it follows you when your city changes.
+  const stamp = value === "city" ? null : await validStamp(value, us.space.id);
+  if (value !== "city" && !stamp) return { error: "Pick one of the stamps." };
   const supabase = await createClient();
   const { error } = await supabase.from("members").update({ stamp }).eq("id", us.me.id);
   if (error) return { error: "Your stamp didn't save. Try again." };

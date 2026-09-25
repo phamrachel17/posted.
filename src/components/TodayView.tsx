@@ -1,6 +1,6 @@
 import { inkStyle } from "@/lib/inks";
 import { peopleOf } from "@/lib/people";
-import type { BookStamp } from "@/lib/stamps";
+import type { BookStamp, CityStamp } from "@/lib/stamps";
 import { dayHeading, dayKey } from "@/lib/time";
 import type { Post, Us } from "@/lib/types";
 import { Composer } from "./Composer";
@@ -15,6 +15,8 @@ type Props = {
   olderHref?: string | null;
   jukebox?: JukeboxData | null;
   stampBook?: BookStamp[];
+  /** Your city's stamp photo (null when there isn't a good one). */
+  cityStampUrl?: string | null;
   /** How connecting Spotify went, when coming back from its sign-in. */
   spotifyResult?: string;
   /** Showing an older page: no composer, no "last here" line. */
@@ -23,7 +25,7 @@ type Props = {
   preview?: boolean;
 };
 
-export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox, stampBook, spotifyResult }: Props) {
+export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox, stampBook, spotifyResult, cityStampUrl }: Props) {
   const { me, partner } = us;
   const todayKey = dayKey(now, me.timezone);
   const today = dayHeading(todayKey, todayKey);
@@ -42,7 +44,7 @@ export function TodayView({ us, posts, now, olderHref, older, startRecording, pr
             preview={preview}
             startRecording={startRecording}
             timeZone={me.timezone}
-            stamps={{ book: stampBook ?? [], defaultStamp: me.stamp, people: peopleOf(us) }}
+            stamps={{ book: stampBook ?? [], defaultStamp: me.stamp, people: peopleOf(us), city: { city: me.city, url: cityStampUrl ?? null } as CityStamp }}
           />
         )}
 

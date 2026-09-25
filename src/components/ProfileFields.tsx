@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { CityField } from "./CityField";
 import { INK_IDS, INKS, type Ink } from "@/lib/inks";
 
 type Props = {
@@ -22,7 +23,8 @@ const noZones = () => NO_ZONES;
 export function ProfileFields({ defaults = {}, takenInk }: Props) {
   const detected = useSyncExternalStore(subscribe, browserZone, () => "");
   const zones = useSyncExternalStore(subscribe, allZones, noZones);
-  const timezone = defaults.timezone || detected;
+  const [pickedZone, setPickedZone] = useState<string | null>(null);
+  const timezone = pickedZone || defaults.timezone || detected;
   const options = timezone && zones.length && !zones.includes(timezone) ? [timezone, ...zones] : zones;
   const firstFree = INK_IDS.find((i) => i !== takenInk) ?? "blue";
   const ink = defaults.ink && defaults.ink !== takenInk ? defaults.ink : firstFree;
@@ -50,15 +52,14 @@ export function ProfileFields({ defaults = {}, takenInk }: Props) {
 
       <div className="field">
         <label className="label" htmlFor="city">Postmark city</label>
-        <input id="city" name="city" type="text" required maxLength={40} defaultValue={defaults.city}
-          placeholder="Brooklyn" autoComplete="address-level2" />
-        <span className="hint">Stamped on everything you post, with your local time.</span>
+        <CityField defaultCity={defaults.city} onPick={(c) => setPickedZone(c.timezone)} />
+        <span className="hint">Stamped on everything you post, with your local time. Picking a city sets your time zone too.</span>
       </div>
 
       <div className="field">
         <label className="label" htmlFor="timezone">Time zone</label>
         {options.length ? (
-          <select id="timezone" name="timezone" key={timezone} defaultValue={timezone} required>
+          <select id="timezone" name="timezone" value={timezone} onChange={(e) => setPickedZone(e.target.value)} required>
             {options.map((z) => <option key={z} value={z}>{z.replaceAll("_", " ")}</option>)}
           </select>
         ) : (

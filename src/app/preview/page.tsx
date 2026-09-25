@@ -6,6 +6,7 @@ import { inkStyle } from "@/lib/inks";
 import { localStamp } from "@/lib/time";
 import type { Member, Post, Us } from "@/lib/types";
 import { stampDesign } from "@/lib/stamps";
+import { cityPhoto } from "@/lib/city-photo";
 
 // Sample content for looking at the design without a database.
 // Only available in development.
@@ -24,7 +25,8 @@ const peaks = (seed: number) =>
     return Math.round(10 + env * (30 + r * 60));
   });
 
-export default function PreviewPage() {
+export default async function PreviewPage() {
+  const [seattle, brooklyn] = await Promise.all([cityPhoto("Seattle", "America/Los_Angeles"), cityPhoto("Brooklyn", "America/New_York")]);
   if (process.env.NODE_ENV === "production") notFound();
 
   const now = new Date();
@@ -54,7 +56,7 @@ export default function PreviewPage() {
   const posts: Post[] = [
     post("p1", partner, 3, {
       kind: "day",
-      stamp: { kind: "design", design: stampDesign("tulip")! },
+      stamp: { kind: "city", city: "Seattle", url: seattle },
       meta: {
         mood: "happy", energy: 4,
         highlight: "Presented the migration plan. Nobody asked the question I was dreading.",
@@ -75,13 +77,16 @@ export default function PreviewPage() {
     post("p4", me, 24, {
       stamp: { kind: "photo", url: photo("#8C6F55", "#5E4838", "#46352A", true) },
       kind: "photo", body: "First persimmons at the market. Saving you the ugliest one. Listening to this on the walk home:\nhttps://open.spotify.com/album/1mJFgPeuLhU1PzLNBURdJC?si=19a4hlvKTSWKJeVqmHgjeg",
-      photos: [{ id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 560, height: 800 }],
+      photos: [
+        { id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 3024, height: 4032 },
+        { id: "ph2", url: photo("#6F8FA8", "#3D5A73", "#2A3F52", true), width: 3024, height: 4032 },
+      ],
       reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
       latestReply: { id: "r1", author_id: "arya", body: "The ugliest one is the best one.", hasAudio: false },
       kept: true,
     }),
     post("p5", me, 50, {
-      stamp: { kind: "design", design: stampDesign("dancing")! },
+      stamp: { kind: "city", city: "Brooklyn", url: brooklyn },
       body: "Just watched Red and I have SO many thoughts about Michael and Kay.",
       reactions: [{ member_id: "arya", emoji: "😂" }],
     }),
@@ -111,6 +116,7 @@ export default function PreviewPage() {
           posts={posts}
           now={now}
           preview
+          cityStampUrl={brooklyn}
           stampBook={[
             { id: "sb1", path: "s/stamp-a.jpg", url: photo("#6F8FA8", "#3D5A73", "#2A3F52", false), addedBy: "arya" },
             { id: "sb2", path: "s/stamp-b.jpg", url: photo("#8C6F55", "#5E4838", "#46352A", true), addedBy: "rachel" },

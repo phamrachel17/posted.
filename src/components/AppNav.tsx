@@ -18,7 +18,7 @@ const LINKS: { href: string; label: string; doodle: string; sidebarOnly?: boolea
   { href: "/scrapbook", label: "Scrapbook", doodle: "nav-scrapbook" },
   { href: "/bucket-list", label: "Bucket list", doodle: "nav-bucket", sidebarOnly: true },
   { href: "/kept", label: "Kept", doodle: "nav-kept" },
-  { href: "/settings", label: "You two", doodle: "nav-you-two" },
+  { href: "/settings", label: "Settings", doodle: "nav-you-two" },
 ];
 
 type Person = { id?: string; name: string; style: CSSProperties };

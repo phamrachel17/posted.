@@ -5,7 +5,7 @@ import { addStamp, removeStamp } from "@/app/actions/stamps";
 import { PhotoError } from "@/lib/images";
 import { inkStyle } from "@/lib/inks";
 import type { People } from "@/lib/people";
-import { STAMP_DESIGNS, type BookStamp } from "@/lib/stamps";
+import { STAMP_DESIGNS, type BookStamp, type CityStamp } from "@/lib/stamps";
 import { removeUpload, uploadStamp } from "@/lib/upload";
 import { Doodle } from "./Doodle";
 import { Stamp } from "./Stamp";
@@ -21,10 +21,12 @@ type Props = {
   /** Lets you take your own photos out of the book (in settings). */
   canRemove?: boolean;
   preview?: boolean;
+  /** Your city's stamp, offered first. */
+  city?: CityStamp | null;
 };
 
 /** The designed stamps and the shared stamp book, with a way to add a photo. */
-export function StampChooser({ value, onChange, book, onBookChange, people, postFiles = [], canRemove, preview }: Props) {
+export function StampChooser({ value, onChange, book, onBookChange, people, postFiles = [], canRemove, preview, city }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,16 @@ export function StampChooser({ value, onChange, book, onBookChange, people, post
 
   return (
     <div className="stamp-chooser">
+      {city && (
+        <div className="stamp-group">
+          <span className="label">Your city</span>
+          <div className="stamp-grid" role="radiogroup" aria-label="Your city">
+            <button type="button" role="radio" aria-checked={value === "city" || value === `city:${city.city}`} aria-label={city.city} title={city.city} onClick={() => onChange("city")}>
+              <Stamp stamp={{ kind: "city", ...city }} size="tray" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="stamp-group">
         <span className="label">Designs</span>
         <div className="stamp-grid" role="radiogroup" aria-label="Designed stamps">

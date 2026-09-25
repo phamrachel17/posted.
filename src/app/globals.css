@@ -28,6 +28,7 @@
   --radius-composer: 7px;
   --radius-dialog: 9px;
   --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.03), 0 10px 22px -18px rgba(28, 33, 43, 0.4);
+  --card-stock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .3 0 0 0 0 .27 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .12 0 0 0 0 .1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   color-scheme: light;
@@ -39,19 +40,36 @@
   box-sizing: border-box;
 }
 
+/* The page color lives on the root, so scrolling past the top or bottom shows paper,
+   not the browser's grey. The body stays clear so the wall texture shows through. */
 html {
   -webkit-text-size-adjust: 100%;
+  background: var(--paper) url("/textures/wall.webp") repeat;
+  background-size: 320px 320px;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--paper) var(--noise);
+  background: transparent;
   color: var(--ink);
   font-family: var(--sans);
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+}
+
+/* The wall everything is posted on: a lit, bumpy plaster texture that stays put
+   while the page scrolls over it (made by scripts/make-wall-texture.mjs). A fixed
+   layer instead of background-attachment: fixed, which phones ignore. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--paper) url("/textures/wall.webp") repeat;
+  background-size: 320px 320px;
 }
 
 h1, h2, h3, p, figure, dl, dd {
@@ -242,6 +260,56 @@ h3.label {
   cursor: not-allowed;
 }
 
+/* City search in the profile form */
+.city-field {
+  position: relative;
+}
+.city-field input {
+  width: 100%;
+}
+.city-list {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 12px 24px -14px rgb(28 33 43 / 0.4);
+}
+.city-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.city-list li[aria-selected="true"] {
+  background: var(--paper);
+}
+.city-list b {
+  font-weight: 500;
+  font-size: 14.5px;
+}
+.city-list span {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.city-list .city-empty {
+  cursor: default;
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+.city-warn {
+  display: block;
+  margin-top: 4px;
+  color: var(--warn);
+}
 .error-note {
   border: 1px solid #e3c8b6;
   background: var(--warn-wash);
@@ -789,15 +857,20 @@ a.space-row:hover {
 }
 
 /* ---------- Composer ---------- */
+/* The blank card you write on: the same paper as a post, lying a little flatter. */
 .composer {
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-composer);
+  background: var(--card-stock), var(--card);
+  border: 0;
+  border-radius: 1.5px;
   padding: 16px 20px 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 0 0 0.5px rgb(28 33 43 / 0.12),
+    0 1px 1.5px rgb(28 33 43 / 0.12),
+    0 8px 16px -12px rgb(28 33 43 / 0.25);
 }
 .composer textarea {
   border: 0;
@@ -896,16 +969,56 @@ a.space-row:hover {
 }
 
 /* ---------- Post card ---------- */
+/* A post is a sheet of card stock stuck to the wall: square corners, no drawn
+   outline, light catching the top edge, a tight shadow where it touches the wall
+   and a softer one where it lifts off, and a grain finer than the wall's. */
 .card {
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-card);
+  background: var(--card-stock), var(--card);
+  border: 0;
+  border-radius: 1.5px;
   padding: 20px 20px 16px;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: var(--shadow-card);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 0 0 0.5px rgb(28 33 43 / 0.12),
+    0 1px 1.5px rgb(28 33 43 / 0.14),
+    0 3px 5px -2px rgb(28 33 43 / 0.1),
+    0 16px 26px -14px rgb(28 33 43 / 0.32);
+}
+.card.is-landing {
+  animation: land 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes land {
+  from {
+    transform: translateY(-12px) scale(1.012);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.95),
+      0 0 0 0.5px rgb(28 33 43 / 0.08),
+      0 18px 30px -12px rgb(28 33 43 / 0.3);
+    opacity: 0.4;
+  }
+}
+.card.is-landing .postmark.is-new {
+  animation-delay: 260ms;
+}
+@media (hover: hover) and (pointer: fine) {
+  /* Under a mouse a card tilts a touch, as if pinned at the top and nudged. */
+  .card {
+    transform-origin: 50% 0;
+    transition: transform 260ms cubic-bezier(0.3, 1.4, 0.5, 1), box-shadow 260ms ease-out;
+  }
+  .card:hover {
+    transform: rotate(-0.7deg);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.95),
+      0 0 0 0.5px rgb(28 33 43 / 0.12),
+      0 2px 3px rgb(28 33 43 / 0.12),
+      0 6px 10px -4px rgb(28 33 43 / 0.1),
+      0 22px 32px -16px rgb(28 33 43 / 0.34);
+  }
 }
 .author-line {
   display: flex;
@@ -958,7 +1071,10 @@ a.space-row:hover {
   border-radius: 3px;
   background: var(--paper-2);
 }
+/* Several photos: even square tiles. height: auto matters, because the img's own
+   height attribute would otherwise win over the square and stretch it into a strip. */
 .photos:not(.n1) img {
+  height: auto;
   aspect-ratio: 1;
   object-fit: cover;
 }
@@ -968,9 +1084,6 @@ a.space-row:hover {
   max-width: 100%;
   height: auto;
   max-height: 380px;
-}
-.photos:not(.n1) {
-  max-width: 440px;
 }
 .photo-missing {
   aspect-ratio: 4 / 3;
@@ -1157,6 +1270,7 @@ a.space-row:hover {
   padding: 6px;
 }
 .pstamp-face {
+  container-type: inline-size;
   position: relative;
   display: block;
   width: 100%;
@@ -1172,28 +1286,63 @@ a.space-row:hover {
 }
 .pstamp-art {
   position: absolute;
-  inset: 22% 10% 8%;
+  inset: 14% 10%;
   background-color: currentColor;
   -webkit-mask: var(--doodle) center / contain no-repeat;
   mask: var(--doodle) center / contain no-repeat;
 }
-.pstamp-value {
+/* A city photo stamp, printed in one ink: the photo's shadows become the city's ink
+   and its highlights the stamp paper, with a little print grain, and the name set
+   along the bottom in the same ink. */
+.pstamp-print {
+  --print-paper: #f4f1e8;
+  isolation: isolate;
+  background: var(--print-ink);
+}
+.pstamp-print img {
+  filter: grayscale(1) contrast(1.35) brightness(1.12);
+  mix-blend-mode: screen;
+}
+.pstamp-print::after {
+  content: "";
   position: absolute;
-  top: 2px;
-  left: 3px;
-  font-family: var(--mono);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
+  inset: 0;
+  pointer-events: none;
+  background: var(--card-stock), var(--print-paper);
+  mix-blend-mode: multiply;
 }
-.pstamp-big .pstamp-value {
-  font-size: 9px;
-  top: 3px;
-  left: 4px;
+.pstamp-city {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 3px 2px 2px;
+  background: var(--print-paper);
+  color: var(--print-ink);
+  /* Set like the site's own small labels ("RIGHT NOW", "NOTEBOOKS"). */
+  font-family: var(--sans);
+  font-size: min(8px, calc(105cqi / var(--word, 8)));
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.05;
+  text-align: center;
+  text-transform: uppercase;
 }
-.pstamp-tiny .pstamp-value {
-  display: none;
+/* No good photo of the city: its name, lettered on colored paper. */
+.pstamp-lettered {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  text-align: center;
+}
+.pstamp-lettered span {
+  font-family: var(--sans);
+  font-size: min(10px, calc(110cqi / var(--word, 8)));
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
 }
 .pstamp-tiny .pstamp-art {
   inset: 10%;
@@ -1408,6 +1557,14 @@ a.space-row:hover {
   flex-direction: column;
   gap: 12px;
   min-width: 200px;
+}
+.rail-body {
+  display: flex;
+  flex-direction: column;
+}
+/* The folded one-line version, for phones only. */
+.rail-summary {
+  display: none;
 }
 /* Each section gets room and a quiet rule, so they don't run together. */
 .rail-box + .rail-box {
@@ -2041,12 +2198,24 @@ button.chip:hover {
   color: var(--ink-c);
   background: var(--ink-wash);
 }
+.heart-btn {
+  transition: transform 120ms ease-out, background-color 200ms ease-out;
+}
+.heart-btn:active:not(:disabled) {
+  transform: scale(0.86);
+}
 .heart-btn.on .doodle {
-  animation: heart 300ms ease-out;
+  animation: heart 340ms cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 @keyframes heart {
-  40% {
-    transform: scale(1.25);
+  0% {
+    transform: scale(0.7);
+  }
+  55% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 .stamp {
@@ -3079,14 +3248,13 @@ button.chip:hover {
   background: conic-gradient(from 20deg, transparent 0 8%, rgba(255, 255, 255, 0.1) 13%, transparent 20% 55%, rgba(255, 255, 255, 0.08) 62%, transparent 70%);
   pointer-events: none;
 }
+/* The record turns only while music plays, and stops where it is when paused. */
 .vinyl.is-on {
-  animation: spin 9s linear infinite;
+  animation: spin 2.4s linear infinite;
+  animation-play-state: paused;
 }
 .vinyl.is-playing {
-  animation-duration: 2.4s;
-}
-.vinyl:hover {
-  animation-play-state: paused;
+  animation-play-state: running;
 }
 @keyframes spin {
   to {
@@ -3131,15 +3299,17 @@ button.chip:hover {
   height: 34px;
   border-radius: 2px;
   background: linear-gradient(#b9b9b0, #8d8d86);
-  transform: rotate(8deg);
+  /* At rest the arm sits just off the record; Play swings it on, settling like a real arm. */
+  transform: rotate(-6deg);
   transform-origin: top center;
-  transition: transform 500ms ease;
+  transition: transform 650ms cubic-bezier(0.3, 1.25, 0.5, 1);
   z-index: 1;
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
   pointer-events: none;
 }
 .jukebox-top.is-playing::before {
-  transform: rotate(32deg);
+  transform: rotate(30deg);
+  transition-duration: 550ms;
 }
 .jukebox-top::after {
   content: "";
@@ -3313,8 +3483,18 @@ button.chip:hover {
   text-decoration: underline;
 }
 @media (prefers-reduced-motion: reduce) {
-  .vinyl.is-on {
+  .vinyl.is-on,
+  .card.is-landing,
+  .heart-btn.on .doodle {
     animation: none;
+  }
+  .card,
+  .heart-btn,
+  .jukebox-top::before {
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
   }
 }
 
@@ -3480,25 +3660,27 @@ button.chip:hover {
 }
 
 /* ---------- Responsive ---------- */
+/* Narrower windows: the rail tucks under the navigation, so the feed stays first. */
 @media (max-width: 1179px) {
   .shell {
-    grid-template-columns: 188px minmax(0, 580px);
+    grid-template-columns: 220px minmax(0, 580px);
+    row-gap: 0;
+  }
+  .nav {
+    grid-column: 1;
+    grid-row: 1;
   }
   .rail {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: 2;
     position: static;
-    padding-top: 0;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 24px 32px;
+    padding-top: 22px;
+    margin-top: 24px;
+    border-top: 1px dashed var(--rule);
   }
   .rail + .main,
   .main:has(+ .rail) {
     grid-column: 2;
-    grid-row: 2;
-  }
-  .nav {
     grid-row: 1 / span 2;
   }
 }
@@ -3513,9 +3695,72 @@ button.chip:hover {
   .nav {
     display: none;
   }
+  /* Phones: one tappable line above the feed; the full rail opens under it. */
   .rail {
     order: -1;
-    gap: 20px 32px;
+    align-self: stretch;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .rail-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--card);
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink-2);
+    text-align: left;
+    cursor: pointer;
+  }
+  .rail-summary-text {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+    min-width: 0;
+  }
+  .rail-summary-who {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .rail-summary-who time,
+  .rail-summary-who span {
+    font-family: var(--mono);
+    font-weight: 400;
+  }
+  .rail-summary-weather {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .rail-summary-days {
+    color: var(--stamp);
+    font-weight: 600;
+  }
+  .rail-summary-chevron {
+    color: var(--ink-3);
+    transition: transform 0.15s;
+  }
+  .rail-summary[aria-expanded="true"] .rail-summary-chevron {
+    transform: rotate(180deg);
+  }
+  .rail-body {
+    display: none;
+  }
+  .rail-body[data-open] {
+    display: flex;
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--card);
   }
   .rail-box {
     min-width: 0;

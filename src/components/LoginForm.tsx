@@ -32,7 +32,7 @@ export function LoginForm({ next, newcomer }: Props) {
   return (
     <div className="form">
       {mode === "link" && (
-        <p className="hint">We&rsquo;ll email you a one-time link that signs you in. Once you&rsquo;re in, you can set a new password under You two.</p>
+        <p className="hint">We&rsquo;ll email you a one-time link that signs you in. Once you&rsquo;re in, you can set a new password in Settings.</p>
       )}
 
       <form action={action} className="form" key={mode}>

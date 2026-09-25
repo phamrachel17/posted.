@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             </li>
             <li>
               <b>Invite your person.</b>
-              <span>From You two, make a private invite link and send it to them. It works once and expires after 7 days.</span>
+              <span>From Settings, make a private invite link and send it to them. It works once and expires after 7 days.</span>
             </li>
             <li>
               <b>The space closes at two.</b>

@@ -10,6 +10,7 @@ import { SpotifyNotice } from "./SpotifyConnect";
 import { spotifyStatus } from "@/lib/spotify-auth";
 import { LiveClock } from "./LiveClock";
 import { OnlineDot } from "./Presence";
+import { RailFold } from "./RailFold";
 
 export type JukeboxData = { current: Song | null; earlier: Song[] };
 
@@ -65,8 +66,27 @@ export async function RightRail({ us, now, jukebox, preview, spotifyResult }: Pr
   const km = myPlace && theirPlace ? distanceKm(myPlace, theirPlace) : null;
   const names = Object.fromEntries([me, partner].filter(Boolean).map((m) => [m!.id, m!.display_name]));
 
+  // The one line shown on phones: the other person's time and weather, and the countdown.
+  const them = partner ?? me;
+  const theirWeatherNow = partner ? theirWeather : myWeather;
+  const summary = (
+    <span className="rail-summary-text">
+      <span className="rail-summary-who">
+        {partner ? partner.display_name : "You"} · <LiveClock timeZone={them.timezone} initial={clockTime(them.timezone, now)} />
+      </span>
+      {theirWeatherNow && (
+        <span className="rail-summary-weather">
+          <Doodle name={`weather-${theirWeatherNow.weather}`} size={15} />
+          {formatTemp(theirWeatherNow.tempC, imperial)}
+        </span>
+      )}
+      {days !== null && days >= 0 && <span className="rail-summary-days">{days === 0 ? "Together today" : `${days} ${days === 1 ? "day" : "days"}`}</span>}
+    </span>
+  );
+
   return (
     <aside className="rail" aria-label="The two of you">
+      <RailFold summary={summary}>
       <div className="rail-box">
         <span className="label">Right now</span>
         <Clock m={me} label="You" now={now} weather={myWeather} imperial={imperial} />
@@ -112,6 +132,7 @@ export async function RightRail({ us, now, jukebox, preview, spotifyResult }: Pr
         </div>
       )}
 
+      </RailFold>
     </aside>
   );
 }

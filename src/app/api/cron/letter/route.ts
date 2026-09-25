@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     if (!email) continue;
 
     const kinds = [...new Set(posts.map((p) => KIND_WORDS[p.kind] ?? "something"))];
-    const text = `${partner.display_name} left you ${listOf(kinds)} today.\n\nWhenever you have a minute: ${site}\n\nTo stop these, turn off the daily letter under You two.`;
+    const text = `${partner.display_name} left you ${listOf(kinds)} today.\n\nWhenever you have a minute: ${site}\n\nTo stop these, turn off the daily letter in Settings.`;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },

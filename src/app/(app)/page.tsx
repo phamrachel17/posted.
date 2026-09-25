@@ -1,4 +1,5 @@
 import { FEED_PAGE, getFeed, getJukebox, getStampBook, getUs } from "@/lib/data";
+import { cityPhoto } from "@/lib/city-photo";
 import { SeenBeacon } from "@/components/SeenBeacon";
 import { TodayView } from "@/components/TodayView";
 
@@ -13,6 +14,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
     getStampBook(),
   ]);
   if (!us) return null; // The layout redirects before this renders.
+  const cityStampUrl = await cityPhoto(us.me.city, us.me.timezone);
 
   const olderHref = posts.length === FEED_PAGE ? `/?before=${encodeURIComponent(posts[posts.length - 1].created_at)}` : null;
 
@@ -27,6 +29,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
         startRecording={record === "1"}
         jukebox={jukebox.missing ? null : jukebox}
         stampBook={stampBook}
+        cityStampUrl={cityStampUrl}
         spotifyResult={typeof spotify === "string" ? spotify : undefined}
       />
       {!olderThan && <SeenBeacon />}

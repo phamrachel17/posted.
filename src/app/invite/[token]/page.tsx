@@ -21,7 +21,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
           <div className="wordmark">posted<span>.</span></div>
         </div>
           <p className="solo-lede">This invite link has expired or was already used.</p>
-          <p>Ask for a new one. They can make it under You two in their settings.</p>
+          <p>Ask for a new one. They can make it in their Settings.</p>
         </div>
       </main>
     );

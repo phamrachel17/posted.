@@ -7,6 +7,7 @@ import { SpaceList } from "@/components/SpaceSwitcher";
 import { StampSettings } from "@/components/StampSettings";
 import { SpotifyConnect, SpotifyNotice } from "@/components/SpotifyConnect";
 import { spotifyStatus } from "@/lib/spotify-auth";
+import { cityPhoto } from "@/lib/city-photo";
 import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
 
 async function origin() {
@@ -34,7 +35,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
   return (
     <main className="main settings">
       <header className="page-head">
-        <h1 className="page-title">You two</h1>
+        <h1 className="page-title">Settings</h1>
       </header>
 
       <section aria-labelledby="you">
@@ -48,7 +49,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
 
       <section aria-labelledby="stamp-title">
         <h2 id="stamp-title" className="label">Your stamp</h2>
-        <StampSettings defaultStamp={me.stamp} book={await getStampBook()} people={peopleOf(us)} />
+        <StampSettings defaultStamp={me.stamp} book={await getStampBook()} people={peopleOf(us)} city={{ city: me.city, url: await cityPhoto(me.city, me.timezone) }} />
       </section>
 
       <section aria-labelledby="invite-title" id="invite">
