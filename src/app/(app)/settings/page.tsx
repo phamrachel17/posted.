@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
-import { getUs } from "@/lib/data";
+import { getMySpaces, getUs } from "@/lib/data";
 import { signOut } from "@/app/actions/auth";
 import { AvatarPicker } from "@/components/AvatarPicker";
+import { SpaceList } from "@/components/SpaceSwitcher";
 import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
 
 async function origin() {
@@ -16,6 +17,14 @@ export default async function SettingsPage() {
   const us = await getUs();
   if (!us) return null;
   const { me, partner, space } = us;
+  const spaces = (await getMySpaces()).map((s) => ({
+    id: s.space_id,
+    myName: s.my_name,
+    myInk: s.my_ink,
+    partnerName: s.partner_name,
+    partnerInk: s.partner_ink,
+    active: s.is_active,
+  }));
 
   return (
     <main className="main settings">
@@ -35,13 +44,19 @@ export default async function SettingsPage() {
       <section aria-labelledby="invite-title" id="invite">
         <h2 id="invite-title" className="label">{partner ? "Together" : "Invite"}</h2>
         {partner ? (
-          <p>You and {partner.display_name} are both here. posted. is closed to anyone else.</p>
+          <p>You and {partner.display_name} are both here. This space is closed to anyone else.</p>
         ) : (
           <>
             <p>Send this link to the other person however you like. Once they join, the space is sealed at two.</p>
             <InviteBox origin={await origin()} />
           </>
         )}
+      </section>
+
+      <section aria-labelledby="spaces-title">
+        <h2 id="spaces-title" className="label">Your spaces</h2>
+        <p>Each space is just two people. Your name, ink, and posts in one never show up in another.</p>
+        <SpaceList spaces={spaces} />
       </section>
 
       <section aria-labelledby="visit">

@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
+import type { Ink } from "./inks";
 import { spotifyMeta } from "./spotify";
 import type {
   Audio,
@@ -51,6 +52,16 @@ export const getUs = cache(async (): Promise<Us | null> => {
   if (spaceError) throw spaceError;
 
   return { me, partner, space: space as Space };
+});
+
+export type MySpace = { space_id: string; my_name: string; my_ink: Ink; partner_name: string | null; partner_ink: Ink | null; is_active: boolean };
+
+/** Every space you're in, for switching between them. */
+export const getMySpaces = cache(async (): Promise<MySpace[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_spaces");
+  if (error) return [];
+  return data as MySpace[];
 });
 
 // ---------------------------------------------------------------------------

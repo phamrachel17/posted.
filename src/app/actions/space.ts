@@ -19,6 +19,7 @@ export async function createSpace(_prev: FormState, formData: FormData): Promise
     p_timezone: profile.timezone,
   });
   if (error) return { error: friendlyError(error) };
+  revalidatePath("/", "layout");
   redirect("/settings#invite");
 }
 
@@ -35,6 +36,7 @@ export async function acceptInvite(token: string, _prev: FormState, formData: Fo
     p_timezone: profile.timezone,
   });
   if (error) return { error: friendlyError(error) };
+  revalidatePath("/", "layout");
   redirect("/");
 }
 
@@ -126,4 +128,14 @@ export async function setAvatar(choice: { path: string } | { icon: string } | nu
   if (old && old !== update.avatar_path) await supabase.storage.from("media").remove([old]);
   revalidatePath("/", "layout");
   return {};
+}
+
+/** Opens another of your spaces. */
+export async function switchSpace(formData: FormData) {
+  const spaceId = String(formData.get("space_id") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_active_space", { p_space_id: spaceId });
+  if (error) return;
+  revalidatePath("/", "layout");
+  redirect("/");
 }

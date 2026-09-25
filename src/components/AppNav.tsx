@@ -7,6 +7,7 @@ import { Doodle } from "./Doodle";
 import { NotebookDialog } from "./NotebookDialog";
 import { NotebookMark } from "./NotebookMark";
 import { OnlineDot } from "./Presence";
+import { SpaceList, type SpaceChoice } from "./SpaceSwitcher";
 import { RECORD_EVENT } from "@/lib/events";
 
 const LINKS: { href: string; label: string; doodle: string; sidebarOnly?: boolean }[] = [
@@ -28,9 +29,11 @@ type Props = {
   partner: Person | null;
   /** Forces the active item, for the design preview. */
   active?: string;
+  /** Every space you're in, for the switcher at the bottom. */
+  spaces?: SpaceChoice[];
 };
 
-export function AppNav({ me, partner, active, notebooks = [] }: Props) {
+export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -76,7 +79,12 @@ export function AppNav({ me, partner, active, notebooks = [] }: Props) {
                     >
                       <NotebookMark doodle={n.doodle} size={26} />
                       <span className="nav-nb-name">{n.name}</span>
-                      {n.isNew && !here && <span className="visually-hidden"> (new)</span>}
+                      {n.isNew && !here && (
+                        <>
+                          <span className="nb-dot" aria-hidden />
+                          <span className="visually-hidden"> (updated)</span>
+                        </>
+                      )}
                     </Link>
                   </li>
                 );
@@ -84,16 +92,24 @@ export function AppNav({ me, partner, active, notebooks = [] }: Props) {
             </ul>
           </div>
         )}
-        <div className="nav-foot">
-          <span className="ink-dot" style={me.style} /> {me.name}
-          {partner && (
-            <>
-              <span>&amp;</span>
-              <span className="ink-dot" style={partner.style} /> {partner.name}
-              {partner.id && <OnlineDot memberId={partner.id} label={partner.name} />}
-            </>
+        <details className="nav-foot space-switch">
+          <summary aria-label="Switch spaces">
+            <span className="ink-dot" style={me.style} /> {me.name}
+            {partner && (
+              <>
+                <span>&amp;</span>
+                <span className="ink-dot" style={partner.style} /> {partner.name}
+                {partner.id && <OnlineDot memberId={partner.id} label={partner.name} />}
+              </>
+            )}
+            <Doodle name="chevron-down" size={12} className="space-switch-chevron" />
+          </summary>
+          {spaces.length > 0 && (
+            <div className="space-switch-panel">
+              <SpaceList spaces={spaces} />
+            </div>
           )}
-        </div>
+        </details>
       </nav>
       <nav className="tabbar" aria-label="Main">
         {LINKS.filter((l) => !l.sidebarOnly).map((l, i) => (

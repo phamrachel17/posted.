@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getUs, getUserId } from "@/lib/data";
+import { getUserId } from "@/lib/data";
 import { isInk } from "@/lib/inks";
 import { JoinForm } from "@/components/JoinForm";
 import { LoginForm } from "@/components/LoginForm";
@@ -8,7 +7,6 @@ import { Doodle } from "@/components/Doodle";
 
 export default async function InvitePage({ params }: PageProps<"/invite/[token]">) {
   const { token } = await params;
-  if (await getUs()) redirect("/");
 
   const supabase = await createClient();
   const { data } = await supabase.rpc("invite_preview", { p_token: token });

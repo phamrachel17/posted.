@@ -88,6 +88,10 @@ export default function PreviewPage() {
           active="/"
           me={{ name: me.display_name, style: inkStyle(me.ink) }}
           partner={{ id: partner.id, name: partner.display_name, style: inkStyle(partner.ink) }}
+          spaces={[
+            { id: "s", myName: "Rachel", myInk: "blue", partnerName: "Arya", partnerInk: "verdigris", active: true },
+            { id: "s2", myName: "Rach", myInk: "light-pink", partnerName: "Sam", partnerInk: "teal", active: false },
+          ]}
           notebooks={[
             { slug: "spanish", name: "Spanish", doodle: "nb-language", isNew: true },
             { slug: "movies", name: "Movies", doodle: "nb-popcorn", isNew: false },

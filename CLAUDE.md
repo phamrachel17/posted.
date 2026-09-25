@@ -9,6 +9,8 @@ behavior: https://claude.ai/artifact/6EZZham2hBEuZHFzfZ6qgo
   lesson notebooks, Kept, daily letter, export). The couple's lesson notebook is Spanish.
 - Never show counts about the other person (unread, seen, reactions). Time in cards is spoken
   ("last night"); exact times appear only in postmarks.
+- One account can be in several spaces (each exactly two people). `my_space_id()` is the space
+  open right now (`active_spaces`, switched with `set_active_space`); everything else follows from it.
 - All tables carry `space_id`; RLS compares it to `my_space_id()`. Schema changes go in a new file
   under `supabase/migrations/`. Update grants are column-level on purpose.
 - Icons are `<Doodle name="…" />`, backed by files in `public/doodles/` (the user's own drawings

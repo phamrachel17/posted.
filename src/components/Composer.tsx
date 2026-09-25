@@ -44,7 +44,7 @@ type Props = {
 };
 
 export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone }: Props) {
-  const draftKey = `posted:draft:${fixedNotebook ?? "today"}`;
+  const draftKey = `posted:draft:${spaceId}:${fixedNotebook ?? "today"}`;
   const [mode, setMode] = useState<Mode>(startRecording ? "voice" : "write");
   const [autoStart, setAutoStart] = useState(Boolean(startRecording));
   const [body, setBody] = useState("");
