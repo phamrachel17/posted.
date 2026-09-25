@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createClient } from "./supabase/server";
 import type { Ink } from "./inks";
 import { spotifyMeta } from "./spotify";
+import { parseStamp, stampView, type BookStamp } from "./stamps";
 import type {
   Audio,
   LessonMeta,
@@ -34,7 +35,7 @@ export const getUs = cache(async (): Promise<Us | null> => {
   const supabase = await createClient();
   const { data: members, error } = await supabase
     .from("members")
-    .select("id, space_id, user_id, display_name, ink, city, timezone, last_seen_at, daily_letter_hour, avatar_path, avatar_icon");
+    .select("id, space_id, user_id, display_name, ink, city, timezone, last_seen_at, daily_letter_hour, avatar_path, stamp");
   if (error) throw error;
 
   const people = members as Member[];
@@ -126,7 +127,11 @@ type PostRow = Omit<Post, "photos" | "audio" | "latestReply" | "kept" | "noteboo
 };
 
 async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]> {
-  const urls = await signPaths(supabase, rows.flatMap((r) => r.media.map((m) => m.path)));
+  const stampPaths = rows.flatMap((r) => {
+    const s = r.notebook ? null : parseStamp(r.meta?.stamp);
+    return s?.kind === "photo" ? [s.path] : [];
+  });
+  const urls = await signPaths(supabase, [...rows.flatMap((r) => r.media.map((m) => m.path)), ...stampPaths]);
   return rows.map(({ media, replies, keeps, ...post }) => {
     const live = replies.filter((r) => !r.deleted_at).sort((a, b) => b.created_at.localeCompare(a.created_at));
     const last = live[0];
@@ -137,6 +142,7 @@ async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]
       latestReply: last ? { id: last.id, author_id: last.author_id, body: last.body, hasAudio: last.media.some((m) => m.type === "audio") } : null,
       // RLS only returns my own keeps, so any row means I kept it.
       kept: keeps.length > 0,
+      stamp: post.notebook ? null : stampView(post.meta?.stamp, urls),
     };
   });
 }
@@ -204,7 +210,14 @@ export const getNotebooks = cache(async (): Promise<Notebook[]> => {
     .from("notebooks")
     .select(NOTEBOOK_COLUMNS)
     .is("archived_at", null)
+    .order("position", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });
+  if (error?.code === "42703") {
+    // Before the notebook_order migration runs there's no position column yet.
+    const old = await supabase.from("notebooks").select(NOTEBOOK_COLUMNS).is("archived_at", null).order("created_at", { ascending: true });
+    if (old.error) throw old.error;
+    return old.data as Notebook[];
+  }
   if (error) throw error;
   return data as Notebook[];
 });
@@ -283,6 +296,23 @@ export const getNotebookNews = cache(async (): Promise<Set<string>> => {
   }
   return new Set((data as string[] | null) ?? []);
 });
+
+// ---------------------------------------------------------------------------
+// Stamp book
+// ---------------------------------------------------------------------------
+
+/** Photo stamps either of you added, newest first, plus a signed link for your default. */
+export async function getStampBook(): Promise<BookStamp[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("stamps").select("id, path, added_by").order("created_at", { ascending: false }).limit(200);
+  if (error) {
+    if (error.code !== "42P01") console.error("stamps failed:", error.message);
+    return [];
+  }
+  const rows = data as { id: string; path: string; added_by: string }[];
+  const urls = await signPaths(supabase, rows.map((r) => r.path));
+  return rows.map((r) => ({ id: r.id, path: r.path, url: urls.get(r.path) ?? null, addedBy: r.added_by }));
+}
 
 // ---------------------------------------------------------------------------
 // Scrapbook

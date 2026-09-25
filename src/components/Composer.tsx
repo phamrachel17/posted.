@@ -11,11 +11,15 @@ import type { NewPhoto } from "@/app/actions/posts";
 import { Doodle } from "./Doodle";
 import { DayFields, dayBounds } from "./DayFields";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { Stamp } from "./Stamp";
+import { StampChooser } from "./StampChooser";
+import { DEFAULT_STAMP, stampView, type BookStamp } from "@/lib/stamps";
+import type { People } from "@/lib/people";
 
 const MAX_PHOTOS = 6;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
-type Attached = { id: string; preview: string; status: "uploading" | "ready" | "failed"; photo?: NewPhoto; problem?: { title: string; detail?: string } };
+type Attached = { id: string; file: File; preview: string; status: "uploading" | "ready" | "failed"; photo?: NewPhoto; problem?: { title: string; detail?: string } };
 type Mode = "write" | "voice" | "day";
 
 function storage(key: string, value?: string) {
@@ -41,9 +45,11 @@ type Props = {
   startRecording?: boolean;
   /** Your time zone, for picking which day a My day is for. */
   timeZone?: string;
+  /** Postage stamps, for posts to Today. Omit where posts don't get stamps. */
+  stamps?: { book: BookStamp[]; defaultStamp: string | null; people: People };
 };
 
-export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone }: Props) {
+export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone, stamps }: Props) {
   const draftKey = `posted:draft:${spaceId}:${fixedNotebook ?? "today"}`;
   const [mode, setMode] = useState<Mode>(startRecording ? "voice" : "write");
   const [autoStart, setAutoStart] = useState(Boolean(startRecording));
@@ -59,6 +65,14 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const fileRef = useRef<HTMLInputElement>(null);
 
   const target = fixedNotebook ?? (notebookId || null);
+  const [stamp, setStamp] = useState(stamps?.defaultStamp || DEFAULT_STAMP);
+  const [book, setBook] = useState<BookStamp[]>(stamps?.book ?? []);
+  const [stampOpen, setStampOpen] = useState(false);
+  // Only posts to Today get a stamp.
+  const stamped = Boolean(stamps) && !target;
+  const stampToSend = stamped ? stamp : null;
+  const stampUrls = Object.fromEntries(book.map((b) => [b.path, b.url]));
+  const currentStamp = stampView(stamp, stampUrls) ?? stampView(DEFAULT_STAMP, {});
 
   useEffect(() => {
     const draft = storage(draftKey);
@@ -111,7 +125,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         continue;
       }
       const id = crypto.randomUUID();
-      setPhotos((list) => [...list, { id, preview: URL.createObjectURL(file), status: "uploading" }]);
+      setPhotos((list) => [...list, { id, file, preview: URL.createObjectURL(file), status: "uploading" }]);
       if (!preview) {
         uploadPhoto(spaceId, file).then(
           (photo) => update(id, { status: "ready", photo }),
@@ -148,8 +162,8 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
     startTransition(async () => {
       const result =
         mode === "day"
-          ? await createPost({ body: "", notebookId: null, day: day as DayMeta, dayDate })
-          : await createPost({ body, notebookId: target, photos: ready });
+          ? await createPost({ body: "", notebookId: null, day: day as DayMeta, dayDate, stamp: stampToSend })
+          : await createPost({ body, notebookId: target, photos: ready, stamp: stampToSend });
       if (result.error) {
         setError(result.error);
         return;
@@ -164,6 +178,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         setBody("");
         storage(draftKey, "");
       }
+      setStampOpen(false);
     });
   }
 
@@ -178,6 +193,36 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
     </label>
   );
 
+  const stampButton = stamped && currentStamp && (
+    <button
+      type="button"
+      className="composer-tool composer-stamp"
+      aria-expanded={stampOpen}
+      onClick={() => setStampOpen((o) => !o)}
+    >
+      <Stamp stamp={currentStamp} size="tiny" />
+      <span className="tool-label">Stamp</span>
+    </button>
+  );
+
+  const stampPanel = stamped && stampOpen && stamps && (
+    <div className="composer-stamps">
+      <StampChooser
+        value={stamp}
+        onChange={(v) => {
+          setStamp(v);
+          setStampOpen(false);
+        }}
+        book={book}
+        onBookChange={setBook}
+        people={stamps.people}
+        postFiles={mode === "write" ? photos.map((p) => ({ id: p.id, file: p.file, preview: p.preview })) : []}
+        preview={preview}
+      />
+      <span className="hint">Just for this post. Your usual stamp is set in You two.</span>
+    </div>
+  );
+
   if (mode === "voice") {
     return (
       <div className="composer">
@@ -187,7 +232,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
           notebookId={target}
           autoStart={autoStart}
           withCaption
-          onSubmit={(audio, caption) => createPost({ body: caption, notebookId: target, audio })}
+          onSubmit={(audio, caption) => createPost({ body: caption, notebookId: target, audio, stamp: stampToSend })}
           onClose={() => {
             setAutoStart(false);
             setMode("write");
@@ -206,8 +251,10 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         </div>
         <DayFields value={day} onChange={setDay} date={dayDate} onDate={setDayDate} timeZone={zone} />
         {error && <p className="error-note"><b>{error}</b></p>}
+        {stampPanel}
         <div className="composer-row">
           <button type="button" className="composer-tool" onClick={() => setMode("write")}>Cancel</button>
+          {stampButton}
           <span className="hint composer-day-where">{dayDate === dayBounds(zone).today ? "Posts to Today" : "Added to that day"}</span>
           <button type="submit" className="btn btn-primary" disabled={!canPost}>{pending ? "Posting…" : "Post"}</button>
         </div>
@@ -259,6 +306,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
           </p>
         ))}
       {error && <p className="error-note"><b>{error}</b></p>}
+      {stampPanel}
 
       <div className="composer-row">
         <button type="button" className="composer-tool" onClick={() => fileRef.current?.click()}>
@@ -272,6 +320,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
             <span className="tool-label">My day</span>
           </button>
         )}
+        {stampButton}
         {picker}
         <button
           type="button"

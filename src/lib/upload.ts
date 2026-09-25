@@ -1,5 +1,5 @@
 import { createClient } from "./supabase/client";
-import { PhotoError, prepareAvatar, preparePhoto } from "./images";
+import { PhotoError, prepareAvatar, preparePhoto, prepareStamp } from "./images";
 import type { NewAudio, NewPhoto } from "@/app/actions/posts";
 
 export async function uploadPhoto(spaceId: string, file: File): Promise<NewPhoto> {
@@ -19,6 +19,15 @@ export async function uploadAvatar(spaceId: string, file: File): Promise<string>
   const path = `${spaceId}/avatar-${crypto.randomUUID()}.jpg`;
   const { error } = await createClient().storage.from("media").upload(path, blob, { contentType: "image/jpeg", upsert: false });
   if (error) throw new PhotoError("The picture couldn't be uploaded.", `Storage said: ${error.message}`);
+  return path;
+}
+
+/** Uploads a photo for the stamp book and returns where it went. */
+export async function uploadStamp(spaceId: string, file: File): Promise<string> {
+  const blob = await prepareStamp(file);
+  const path = `${spaceId}/stamp-${crypto.randomUUID()}.jpg`;
+  const { error } = await createClient().storage.from("media").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+  if (error) throw new PhotoError("The stamp couldn't be uploaded.", `Storage said: ${error.message}`);
   return path;
 }
 

@@ -1,5 +1,6 @@
 import { inkStyle } from "@/lib/inks";
 import { peopleOf } from "@/lib/people";
+import type { BookStamp } from "@/lib/stamps";
 import { dayHeading, dayKey } from "@/lib/time";
 import type { Post, Us } from "@/lib/types";
 import { Composer } from "./Composer";
@@ -13,13 +14,14 @@ type Props = {
   now: Date;
   olderHref?: string | null;
   jukebox?: JukeboxData | null;
+  stampBook?: BookStamp[];
   /** Showing an older page: no composer, no "last here" line. */
   older?: boolean;
   startRecording?: boolean;
   preview?: boolean;
 };
 
-export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox }: Props) {
+export function TodayView({ us, posts, now, olderHref, older, startRecording, preview, jukebox, stampBook }: Props) {
   const { me, partner } = us;
   const todayKey = dayKey(now, me.timezone);
   const today = dayHeading(todayKey, todayKey);
@@ -32,7 +34,15 @@ export function TodayView({ us, posts, now, olderHref, older, startRecording, pr
           <h1 className="date">{older ? "Before this" : today.date}</h1>
         </header>
 
-        {!older && <Composer spaceId={us.space.id} preview={preview} startRecording={startRecording} timeZone={me.timezone} />}
+        {!older && (
+          <Composer
+            spaceId={us.space.id}
+            preview={preview}
+            startRecording={startRecording}
+            timeZone={me.timezone}
+            stamps={{ book: stampBook ?? [], defaultStamp: me.stamp, people: peopleOf(us) }}
+          />
+        )}
 
         {posts.length === 0 && !older && (
           <div className="empty">

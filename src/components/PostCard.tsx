@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { inkStyle } from "@/lib/inks";
 import type { People } from "@/lib/people";
-import { exactTime, longDate, spokenTime } from "@/lib/time";
+import { longDate } from "@/lib/time";
 import type { DayMeta, LessonMeta, Post } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { CardFooter } from "./CardFooter";
@@ -60,11 +60,8 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
   return (
     <article className={detail ? "card card-detail" : "card"} style={author ? inkStyle(author.ink) : undefined}>
       <header className="author-line">
-        {author && <Avatar name={author.name} ink={author.ink} url={author.avatarUrl} icon={author.avatarIcon} size={30} />}
+        {author && <Avatar name={author.name} ink={author.ink} url={author.avatarUrl} size={30} />}
         <b>{author?.name ?? "Someone"}</b>
-        <time dateTime={post.created_at} title={exactTime(post.created_at, viewerTz)}>
-          {spokenTime(post.created_at, post.postmark.local, viewerTz, now)}
-        </time>
         {post.kind === "day" && <span>· My day</span>}
         {post.kind === "day" && (post.meta as { added_at?: string }).added_at && <span>· added later</span>}
         {post.notebook && !hideNotebook && (
@@ -142,7 +139,7 @@ export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, re
         </div>
       )}
 
-      <Postmark postmark={post.postmark} isNew={isNew} big={detail} />
+      <Postmark postmark={post.postmark} isNew={isNew} big={detail} stamp={post.notebook ? null : post.stamp} />
     </article>
   );
 }

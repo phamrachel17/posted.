@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUs } from "@/lib/data";
 import { MAX_DAY_NOTE } from "@/lib/day";
+import { validStamp } from "./stamps";
 import { EMOJI, type DayMeta, type Emoji, type Mood } from "@/lib/types";
 
 export type NewPhoto = { path: string; width: number; height: number; mime: string };
@@ -67,6 +68,8 @@ export async function createPost(input: {
   day?: DayMeta | null;
   /** For a My day: which day it's about ("YYYY-MM-DD"). The database only honors recent past days. */
   dayDate?: string;
+  /** The postage stamp, for posts to Today: "design:<id>" or "photo:<path>". */
+  stamp?: string | null;
 }): Promise<Result> {
   const us = await getUs();
   if (!us) return { error: "Sign in again to post." };
@@ -89,12 +92,20 @@ export async function createPost(input: {
     ...(audio ? [audioMedia(audio)] : []),
   ];
 
+  // Only posts to Today carry a stamp. A bad one is dropped rather than blocking the post.
+  const stamp = !input.notebookId && input.stamp ? await validStamp(input.stamp, us.space.id) : null;
+  const meta = {
+    ...(day ?? {}),
+    ...(day && input.dayDate && /^\d{4}-\d{2}-\d{2}$/.test(input.dayDate) ? { day: input.dayDate } : {}),
+    ...(stamp ? { stamp } : {}),
+  };
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_post", {
     p_kind: kind,
     p_body: body,
     p_notebook_id: input.notebookId || null,
-    p_meta: day ? { ...day, ...(input.dayDate && /^\d{4}-\d{2}-\d{2}$/.test(input.dayDate) ? { day: input.dayDate } : {}) } : {},
+    p_meta: meta,
     p_media: media,
   });
   if (error) return { error: "Your post didn't go through. It's still here, so try again." };
@@ -111,7 +122,10 @@ export async function updateDay(postId: string, meta: DayMeta, dayDate: string):
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dayDate)) return { error: "Pick which day this is for." };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("update_day", { p_post_id: postId, p_meta: day, p_day: dayDate });
+  // Editing a day keeps the stamp it was sent with.
+  const { data: current } = await supabase.from("posts").select("meta").eq("id", postId).eq("author_id", us.me.id).maybeSingle();
+  const stamp = (current?.meta as { stamp?: string } | undefined)?.stamp;
+  const { error } = await supabase.rpc("update_day", { p_post_id: postId, p_meta: stamp ? { ...day, stamp } : day, p_day: dayDate });
   if (error) return { error: error.code === "P0001" ? error.message : "Your changes didn't save. Try again." };
   refresh();
   return {};

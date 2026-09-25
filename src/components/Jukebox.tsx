@@ -7,6 +7,7 @@ import { putOnSong } from "@/app/actions/jukebox";
 import type { Song } from "@/lib/data";
 import { DRAWN } from "@/lib/drawn";
 import { useSpotifyEmbed } from "@/lib/spotify-embed";
+import { useSpotifyPlayer } from "@/lib/spotify-player";
 import { createClient } from "@/lib/supabase/client";
 import { doodleUrl } from "./Doodle";
 
@@ -19,6 +20,8 @@ type Props = {
   /** Spoken time for when the current song went on, e.g. "Tuesday evening". */
   when: string | null;
   preview?: boolean;
+  /** Your Spotify connection, for playing whole songs. */
+  spotify?: { configured: boolean; connected: boolean; premium: boolean };
 };
 
 /**
@@ -49,21 +52,26 @@ const DRAWN_RECORD = DRAWN.has("record");
  * A record player shared by the two of you. Whatever was put on last stays on
  * until one of you changes it, so it's a quiet way to pass each other songs.
  */
-export function Jukebox({ current, earlier, names, meId, spaceId, when, preview }: Props) {
+export function Jukebox({ current, earlier, names, meId, spaceId, when, preview, spotify }: Props) {
   // Our own <audio> preview, used only if Spotify's player can't load.
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [shown, setShown] = useState(false);
+  const uri = current ? `spotify:${current.kind}:${current.spotify_id}` : null;
+  // Whole songs through your own Spotify, when it's connected and Premium.
+  const { state: fullState, toggle: fullToggle, pause: fullPause, reset: fullReset } = useSpotifyPlayer(!preview && Boolean(spotify?.connected));
+  const useFull = fullState.ready && !fullState.problem;
+  const fullPending = Boolean(spotify?.connected) && !fullState.ready && !fullState.problem;
   const {
     holder: embedHolder,
     state: embedState,
     toggle: embedToggle,
     pause: embedPause,
-  } = useSpotifyEmbed(current ? `spotify:${current.kind}:${current.spotify_id}` : null, !preview);
+  } = useSpotifyEmbed(uri, !preview && !useFull && !fullPending);
   // If Spotify's player stops by itself, the record carries on with its own preview.
-  const useEmbed = !preview && embedState.ready && !embedState.failed && !embedState.stalled;
-  const playing = useEmbed ? embedState.playing : audioPlaying;
-  const progress = useEmbed ? embedState.progress : audioProgress;
+  const useEmbed = !useFull && !preview && embedState.ready && !embedState.failed && !embedState.stalled;
+  const playing = useFull ? fullState.playing : useEmbed ? embedState.playing : audioPlaying;
+  const progress = useFull ? fullState.progress : useEmbed ? embedState.progress : audioProgress;
   const [changing, setChanging] = useState(false);
   const [link, setLink] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -80,17 +88,23 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "jukebox_songs", filter: `space_id=eq.${spaceId}` }, () => {
         audioRef.current?.pause();
         embedPause();
+        fullReset();
         router.refresh();
       })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [spaceId, router, preview, embedPause]);
+  }, [spaceId, router, preview, embedPause, fullReset]);
 
   async function togglePlay() {
     const el = audioRef.current;
     if (!current) return setChanging(true);
+    if (useFull && uri) {
+      window.dispatchEvent(new CustomEvent("posted:play", { detail: "jukebox" }));
+      if (await fullToggle(uri)) return setError(null);
+      return setError("Spotify didn't start playing. Try again, or tap the song name to open it in Spotify.");
+    }
     if (useEmbed) {
       setShown(true);
       window.dispatchEvent(new CustomEvent("posted:play", { detail: "jukebox" }));
@@ -124,10 +138,11 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
       if ((e as CustomEvent<string>).detail === "jukebox") return;
       audioRef.current?.pause();
       embedPause();
+      fullPause();
     };
     window.addEventListener("posted:play", onOther);
     return () => window.removeEventListener("posted:play", onOther);
-  }, [embedPause]);
+  }, [embedPause, fullPause]);
 
   const who = current ? (current.set_by === meId ? "You" : (names[current.set_by] ?? "Someone")) : null;
   const classes = ["vinyl", current && "is-on", playing && "is-playing", DRAWN_RECORD && "is-drawn"].filter(Boolean).join(" ");
@@ -138,7 +153,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
         <button
           type="button"
           className={classes}
-          aria-label={!current ? "Put a song on" : playing ? "Pause" : useEmbed || current.preview ? `Play ${current.title}` : `Open ${current.title} in Spotify`}
+          aria-label={!current ? "Put a song on" : playing ? "Pause" : useFull || useEmbed || current.preview ? `Play ${current.title}` : `Open ${current.title} in Spotify`}
           onClick={togglePlay}
         >
           {DRAWN_RECORD && <span className="vinyl-drawing" style={{ "--doodle": `url(${doodleUrl("record")})` } as React.CSSProperties} aria-hidden />}
@@ -164,12 +179,35 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
         </div>
       </div>
 
-      {current && (useEmbed || current.preview) && (
+      {current && (useFull || useEmbed || current.preview) && (
         <div className="jukebox-controls">
           <button type="button" className="b-tool" onClick={togglePlay}>
-            {playing ? "❚❚ Pause" : useEmbed ? "▶ Play" : "▶ Play preview"}
+            {playing ? "❚❚ Pause" : useFull || useEmbed ? "▶ Play" : "▶ Play preview"}
           </button>
         </div>
+      )}
+
+      {useFull && current && (playing || progress > 0) && (
+        <div className="jukebox-progress" aria-hidden>
+          <i style={{ width: `${progress * 100}%` }} />
+        </div>
+      )}
+
+      {!preview && spotify?.configured && !spotify.connected && (
+        <span className="hint jukebox-connect">
+          <a href="/api/spotify/login?back=/">Connect your Spotify</a> to hear whole songs here (Premium).
+        </span>
+      )}
+      {fullState.problem === "not-premium" && (
+        <p className="hint jukebox-note">Spotify won&rsquo;t play whole songs on this account inside a website. That needs Spotify Premium.</p>
+      )}
+      {fullState.problem === "unsupported" && (
+        <p className="hint jukebox-note">Whole songs play in a computer browser. On your phone, tap the song name to open it in Spotify.</p>
+      )}
+      {fullState.problem === "signed-out" && (
+        <p className="hint jukebox-note">
+          Spotify needs you to sign in again. <a href="/api/spotify/login?back=/">Reconnect Spotify</a>.
+        </p>
       )}
 
       {/* Spotify's own player. It stays tucked away until the first play, and hides again if it stalls. */}
@@ -192,7 +230,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
         </div>
       )}
 
-      {!useEmbed && current?.preview && (playing || progress > 0) && (
+      {!useFull && !useEmbed && current?.preview && (playing || progress > 0) && (
         <div className="jukebox-progress" aria-hidden>
           <i style={{ width: `${progress * 100}%` }} />
         </div>
@@ -212,7 +250,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview 
           onError={() => setError("The preview couldn't load. Tap the song name to open it in Spotify.")}
         />
       )}
-      {!useEmbed && current?.preview && <span className="hint">A 30-second preview. Tap the song name for the whole thing in Spotify.</span>}
+      {!useFull && !fullPending && !useEmbed && current?.preview && <span className="hint">A 30-second preview. Tap the song name for the whole thing in Spotify.</span>}
 
       {changing ? (
         <form

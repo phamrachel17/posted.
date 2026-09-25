@@ -1,4 +1,5 @@
 import type { Ink } from "./inks";
+import type { StampView } from "./stamps";
 
 export type Member = {
   id: string;
@@ -11,7 +12,8 @@ export type Member = {
   last_seen_at: string | null;
   daily_letter_hour: number | null;
   avatar_path: string | null;
-  avatar_icon: string | null;
+  /** Default stamp for Today posts: "design:<id>" or "photo:<path>". */
+  stamp: string | null;
   /** A signed link to the picture, filled in when members are loaded. */
   avatar_url?: string | null;
 };
@@ -112,6 +114,8 @@ export type Post = {
   reactions: Reaction[];
   latestReply: ReplyPreview | null;
   kept: boolean;
+  /** The postage stamp it was sent with. Only Today posts have one. */
+  stamp?: StampView | null;
 };
 
 export type Reply = {

@@ -542,6 +542,30 @@ h3.label {
   white-space: nowrap;
 }
 /* The other person changed something in this notebook since you last opened it. */
+/* Drag to reorder (notebooks in the sidebar and on the shelf). */
+.sortable [data-sort-id] {
+  cursor: grab;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sortable .sort-item {
+  display: contents;
+}
+.sortable li[data-dragging],
+.sortable .sort-item[data-dragging] > * {
+  cursor: grabbing;
+  position: relative;
+  z-index: 5;
+  opacity: 0.92;
+  transform: scale(1.03) rotate(-1deg);
+  box-shadow: 0 14px 28px -14px rgb(28 33 43 / 0.45);
+  background-color: var(--card);
+  border-radius: 6px;
+}
+.sortable .sort-item[data-dragging] > * {
+  background-color: unset;
+}
 .nb-dot {
   flex: none;
   width: 9px;
@@ -620,25 +644,6 @@ h3.label {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-.avatar-icons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.avatar-icons button {
-  padding: 3px;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  cursor: pointer;
-}
-.avatar-icons button[aria-checked="true"] {
-  box-shadow: 0 0 0 2px var(--ink);
-}
-.avatar-icons button:disabled {
-  cursor: default;
-  opacity: 0.6;
 }
 .space-switch {
   position: relative;
@@ -1112,9 +1117,241 @@ a.space-row:hover {
   opacity: 0.88;
   pointer-events: none;
 }
-.postmark-ring {
-  width: 66px;
+/* ---------- Postage stamps ---------- */
+/* Holes are punched every 6px with their centers on the edge, so each size is a
+   multiple of 6 and the perforations meet evenly at the corners. */
+.pstamp {
+  --hole: 3px;
+  display: inline-block;
+  flex: none;
+  width: 60px;
+  height: 72px;
+  padding: 5px;
+  background: #fffdf8;
+  -webkit-mask:
+    linear-gradient(#000 0 0) center / calc(100% - 2 * var(--hole)) calc(100% - 2 * var(--hole)) no-repeat,
+    radial-gradient(circle, #0000 2.1px, #000 2.6px) calc(-1 * var(--hole)) calc(-1 * var(--hole)) / calc(2 * var(--hole)) calc(2 * var(--hole)) repeat;
+  mask:
+    linear-gradient(#000 0 0) center / calc(100% - 2 * var(--hole)) calc(100% - 2 * var(--hole)) no-repeat,
+    radial-gradient(circle, #0000 2.1px, #000 2.6px) calc(-1 * var(--hole)) calc(-1 * var(--hole)) / calc(2 * var(--hole)) calc(2 * var(--hole)) repeat;
+}
+.pstamp-tiny {
+  width: 24px;
+  height: 30px;
+  padding: 3px;
+  --hole: 1.5px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) center / calc(100% - 3px) calc(100% - 3px) no-repeat,
+    radial-gradient(circle, #0000 1px, #000 1.4px) -1.5px -1.5px / 3px 3px repeat;
+  mask:
+    linear-gradient(#000 0 0) center / calc(100% - 3px) calc(100% - 3px) no-repeat,
+    radial-gradient(circle, #0000 1px, #000 1.4px) -1.5px -1.5px / 3px 3px repeat;
+}
+.pstamp-tray {
+  width: 54px;
   height: 66px;
+}
+.pstamp-big {
+  width: 78px;
+  height: 96px;
+  padding: 6px;
+}
+.pstamp-face {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.pstamp-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pstamp-art {
+  position: absolute;
+  inset: 22% 10% 8%;
+  background-color: currentColor;
+  -webkit-mask: var(--doodle) center / contain no-repeat;
+  mask: var(--doodle) center / contain no-repeat;
+}
+.pstamp-value {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.pstamp-big .pstamp-value {
+  font-size: 9px;
+  top: 3px;
+  left: 4px;
+}
+.pstamp-tiny .pstamp-value {
+  display: none;
+}
+.pstamp-tiny .pstamp-art {
+  inset: 10%;
+}
+
+/* Choosing a stamp: designs, then the shared stamp book. */
+.stamp-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.stamp-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stamp-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 8px;
+  align-items: flex-start;
+}
+.stamp-grid button,
+.stamp-cell > button:first-child {
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+  transition: transform 0.12s;
+}
+.stamp-grid button:hover {
+  transform: rotate(-3deg);
+}
+.stamp-grid [aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--stamp);
+}
+.stamp-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+/* A stamp the other person made, labeled in their ink. */
+.stamp-from {
+  max-width: 70px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink-c);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stamp-cell:has(.stamp-from) > button:first-child {
+  box-shadow: inset 0 0 0 1.5px var(--ink-wash);
+}
+.stamp-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  display: grid !important;
+  place-items: center;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: var(--card) !important;
+  box-shadow: 0 0 0 1px var(--rule);
+  color: var(--ink-2);
+}
+.stamp-add {
+  width: 62px;
+  height: 74px;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1.5px dashed var(--rule) !important;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 10.5px;
+  line-height: 1.15 !important;
+  text-align: center;
+  overflow: hidden;
+}
+.stamp-add img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.stamp-add:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.composer-stamps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0 4px;
+  border-top: 1px dashed var(--rule);
+}
+.composer-stamp .pstamp {
+  transform: rotate(-6deg);
+}
+.stamp-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.stamp-settings-now {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.stamp-settings-now > span {
+  line-height: 0;
+  transform: rotate(-4deg);
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.18));
+}
+.stamp-settings-now p {
+  max-width: 380px;
+  margin: 0;
+}
+
+/* On a card: the stamp sits under the postmark, which cancels its corner. */
+.postmark-stamp {
+  position: relative;
+  margin-right: -20px;
+  margin-top: 16px;
+  transform: rotate(11deg);
+  filter: drop-shadow(0 1px 1.2px rgb(0 0 0 / 0.18));
+}
+.postmark.has-stamp {
+  opacity: 1;
+}
+.postmark.has-stamp .postmark-ring {
+  position: relative;
+  background: color-mix(in srgb, var(--card) 22%, transparent);
+  box-shadow: none;
+  outline: 1px solid color-mix(in srgb, currentColor 80%, transparent);
+  outline-offset: -5px;
+}
+.card:has(.postmark.has-stamp) .author-line {
+  padding-right: 176px;
+}
+/* Keep a My day's energy row clear of the stamp. */
+.card:has(.postmark.has-stamp) .day-top {
+  margin-top: 12px;
+}
+.postmark-ring {
+  width: 82px;
+  height: 82px;
   border-radius: 50%;
   border: 1.5px solid currentColor;
   box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 4px currentColor;
@@ -1124,14 +1361,14 @@ a.space-row:hover {
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: 10px;
   line-height: 1.25;
   letter-spacing: 0.04em;
   text-align: center;
-  padding: 0 7px;
+  padding: 0 8px;
 }
 .postmark-ring b {
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 .postmark-city {
@@ -1915,12 +2152,12 @@ button.chip:hover {
   font-size: 18px;
 }
 .postmark.big .postmark-ring {
-  width: 84px;
-  height: 84px;
-  font-size: 10px;
+  width: 100px;
+  height: 100px;
+  font-size: 11.5px;
 }
 .postmark.big .postmark-ring b {
-  font-size: 13px;
+  font-size: 15.5px;
 }
 .margin-notes {
   list-style: none;
@@ -3302,15 +3539,20 @@ button.chip:hover {
     max-height: 300px;
   }
   .postmark-ring {
-    width: 54px;
-    height: 54px;
-    font-size: 7px;
+    width: 70px;
+    height: 70px;
+    font-size: 8.5px;
   }
   .postmark-ring b {
-    font-size: 9px;
+    font-size: 11px;
   }
   .author-line {
-    padding-right: 70px;
+    padding-right: 86px;
+  }
+  .card:has(.postmark.has-stamp) .author-line {
+    padding-right: 136px;
+    min-height: 62px;
+    align-items: flex-start;
   }
   .tabbar {
     position: fixed;

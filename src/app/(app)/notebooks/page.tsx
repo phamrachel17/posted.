@@ -6,6 +6,7 @@ import { spokenTime, localStamp } from "@/lib/time";
 import { Doodle } from "@/components/Doodle";
 import { NotebookDialog } from "@/components/NotebookDialog";
 import { NotebookMark } from "@/components/NotebookMark";
+import { SortableShelf } from "@/components/SortableShelf";
 
 export default async function NotebooksPage() {
   const [us, notebooks, activity, news] = await Promise.all([getUs(), getNotebooks(), getNotebookActivity(), getNotebookNews()]);
@@ -19,12 +20,14 @@ export default async function NotebooksPage() {
         <h1 className="page-title">Notebooks</h1>
         <p className="hint">One for each thing you share. Posts in a notebook stay in that notebook.</p>
       </header>
-      <div className="shelf">
-        {notebooks.map((n) => {
+      <SortableShelf
+        items={notebooks.map((n) => {
           const last = activity.get(n.id);
           const who = last && members.find((m) => m!.id === last.author_id);
-          return (
-            <Link key={n.id} href={`/n/${n.slug}`} className="cover" style={{ background: coverColor(n.cover) }}>
+          return {
+            id: n.id,
+            node: (
+            <Link href={`/n/${n.slug}`} className="cover" style={{ background: coverColor(n.cover) }}>
               <NotebookMark doodle={n.doodle} size={34} />
               {news.has(n.id) && <span className="new-dot cover-dot" aria-label="New from your partner" />}
               <b>{n.name}</b>
@@ -41,8 +44,10 @@ export default async function NotebooksPage() {
                 )}
               </span>
             </Link>
-          );
+            ),
+          };
         })}
+      >
         <NotebookDialog
           triggerClassName="cover cover-new"
           trigger={
@@ -52,7 +57,8 @@ export default async function NotebooksPage() {
             </>
           }
         />
-      </div>
+      </SortableShelf>
+      {notebooks.length > 1 && <p className="hint">Drag the covers to put them in any order. The sidebar follows.</p>}
       {notebooks.length === 0 && (
         <p className="hint">
           A notebook is a place for one topic: movies, cooking, Spanish lessons. Everything you post in one still shows up on Today.

@@ -6,6 +6,7 @@ import type { Member, Us } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { Doodle } from "./Doodle";
 import { Jukebox } from "./Jukebox";
+import { spotifyStatus } from "@/lib/spotify-auth";
 import { LiveClock } from "./LiveClock";
 import { OnlineDot } from "./Presence";
 
@@ -32,7 +33,7 @@ function Clock({ m, label, now, weather, imperial, online }: { m: Member; label:
   return (
     <div className="clock-block" style={inkStyle(m.ink)}>
       <div className="clock">
-        <Avatar name={m.display_name} ink={m.ink} url={m.avatar_url} icon={m.avatar_icon} size={30} />
+        <Avatar name={m.display_name} ink={m.ink} url={m.avatar_url} size={30} />
         <span className="clock-who">
           {label} · {m.city}
           {online && <OnlineDot memberId={m.id} label={m.display_name} />}
@@ -50,6 +51,7 @@ export async function RightRail({ us, now, jukebox, preview }: Props) {
   const days = space.next_visit_on ? daysUntil(space.next_visit_on, me.timezone, now) : null;
 
   // Weather and distance; any of these can come back null and the rail simply leaves it out.
+  const spotify = preview ? undefined : await spotifyStatus();
   const [myPlace, theirPlace] = await Promise.all([
     geocode(me.city, me.timezone),
     partner ? geocode(partner.city, partner.timezone) : Promise.resolve(null),
@@ -102,6 +104,7 @@ export async function RightRail({ us, now, jukebox, preview }: Props) {
                 : null
             }
             preview={preview}
+            spotify={spotify}
           />
         </div>
       )}

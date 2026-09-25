@@ -221,3 +221,15 @@ export async function markNotebookRead(notebookId: string) {
   const { error } = await supabase.rpc("mark_notebook_read", { p_notebook_id: notebookId });
   if (!error) revalidatePath("/", "layout");
 }
+
+/** Saves the order you dragged the notebooks into. Both of you see it. */
+export async function reorderNotebooks(ids: string[]): Promise<{ error?: string }> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again." };
+  const clean = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 200);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reorder_notebooks", { p_ids: clean });
+  if (error) return { error: "The new order didn't save. Try again." };
+  revalidatePath("/", "layout");
+  return {};
+}

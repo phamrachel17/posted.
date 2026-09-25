@@ -5,6 +5,7 @@ import { PresenceProvider } from "@/components/Presence";
 import { inkStyle } from "@/lib/inks";
 import { localStamp } from "@/lib/time";
 import type { Member, Post, Us } from "@/lib/types";
+import { stampDesign } from "@/lib/stamps";
 
 // Sample content for looking at the design without a database.
 // Only available in development.
@@ -30,12 +31,12 @@ export default function PreviewPage() {
   const me: Member = {
     id: "rachel", space_id: "s", user_id: "u1", display_name: "Rachel", ink: "blue", city: "Brooklyn",
     timezone: "America/New_York", last_seen_at: new Date(now.getTime() - 20 * HOUR).toISOString(), daily_letter_hour: null,
-    avatar_path: null, avatar_icon: null,
+    avatar_path: null, stamp: null,
   };
   const partner: Member = {
     id: "arya", space_id: "s", user_id: "u2", display_name: "Arya", ink: "verdigris", city: "Seattle",
     timezone: "America/Los_Angeles", last_seen_at: null, daily_letter_hour: null,
-    avatar_path: null, avatar_icon: "st-flower",
+    avatar_path: null, stamp: null,
   };
   const visit = new Date(now.getTime() + 18 * 24 * HOUR).toISOString().slice(0, 10);
   const us: Us = { me, partner, space: { id: "s", name: null, next_visit_on: visit, next_visit_place: "Seattle" } };
@@ -53,6 +54,7 @@ export default function PreviewPage() {
   const posts: Post[] = [
     post("p1", partner, 3, {
       kind: "day",
+      stamp: { kind: "design", design: stampDesign("tulip")! },
       meta: {
         mood: "happy", energy: 4,
         highlight: "Presented the migration plan. Nobody asked the question I was dreading.",
@@ -62,13 +64,16 @@ export default function PreviewPage() {
       },
     }),
     post("p2", partner, 7, {
+      stamp: { kind: "design", design: stampDesign("record")! },
       kind: "voice", body: "The guy with the three corgis was back.",
       audio: { id: "a1", url: null, mime: "audio/webm", duration_ms: 42_000, peaks: peaks(1) },
     }),
     post("p3", partner, 18, {
+      stamp: { kind: "design", design: stampDesign("heart")! },
       body: "Question for Sunday: why is it “estoy cansada” and not “soy cansada”? I've been saying it wrong for a month.",
     }),
     post("p4", me, 24, {
+      stamp: { kind: "photo", url: photo("#8C6F55", "#5E4838", "#46352A", true) },
       kind: "photo", body: "First persimmons at the market. Saving you the ugliest one. Listening to this on the walk home:\nhttps://open.spotify.com/album/1mJFgPeuLhU1PzLNBURdJC?si=19a4hlvKTSWKJeVqmHgjeg",
       photos: [{ id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 560, height: 800 }],
       reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
@@ -76,6 +81,7 @@ export default function PreviewPage() {
       kept: true,
     }),
     post("p5", me, 50, {
+      stamp: { kind: "design", design: stampDesign("dancing")! },
       body: "Just watched Red and I have SO many thoughts about Michael and Kay.",
       reactions: [{ member_id: "arya", emoji: "😂" }],
     }),
@@ -93,11 +99,11 @@ export default function PreviewPage() {
             { id: "s2", myName: "Rach", myInk: "light-pink", partnerName: "Sam", partnerInk: "teal", active: false },
           ]}
           notebooks={[
-            { slug: "spanish", name: "Spanish", doodle: "nb-language", isNew: true },
-            { slug: "movies", name: "Movies", doodle: "nb-popcorn", isNew: false },
-            { slug: "music", name: "Music", doodle: "nb-music", isNew: true },
-            { slug: "cooking", name: "Cooking", doodle: "nb-cooking", isNew: false },
-            { slug: "books", name: "Books", doodle: "nb-reading", isNew: false },
+            { id: "nb-spanish", slug: "spanish", name: "Spanish", doodle: "nb-language", isNew: true },
+            { id: "nb-movies", slug: "movies", name: "Movies", doodle: "nb-popcorn", isNew: false },
+            { id: "nb-music", slug: "music", name: "Music", doodle: "nb-music", isNew: true },
+            { id: "nb-cooking", slug: "cooking", name: "Cooking", doodle: "nb-cooking", isNew: false },
+            { id: "nb-books", slug: "books", name: "Books", doodle: "nb-reading", isNew: false },
           ]}
         />
         <TodayView
@@ -105,6 +111,10 @@ export default function PreviewPage() {
           posts={posts}
           now={now}
           preview
+          stampBook={[
+            { id: "sb1", path: "s/stamp-a.jpg", url: photo("#6F8FA8", "#3D5A73", "#2A3F52", false), addedBy: "arya" },
+            { id: "sb2", path: "s/stamp-b.jpg", url: photo("#8C6F55", "#5E4838", "#46352A", true), addedBy: "rachel" },
+          ]}
           jukebox={{
             current: {
               id: "j1", kind: "track", spotify_id: "4cOdK2wGLETKBW3PvgPWqT", title: "Never Gonna Give You Up", artist: "Rick Astley",

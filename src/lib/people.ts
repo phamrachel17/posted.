@@ -3,7 +3,7 @@ import type { Member, Us } from "./types";
 
 /** Serializable lookup of who's who, for client components. */
 export type People = { meId: string; spaceId: string; byId: Record<string, Person> };
-export type Person = { name: string; ink: Ink; timezone: string; avatarUrl: string | null; avatarIcon: string | null };
+export type Person = { name: string; ink: Ink; timezone: string; avatarUrl: string | null };
 
 export function peopleOf(us: Us): People {
   const byId: People["byId"] = {};
@@ -12,7 +12,6 @@ export function peopleOf(us: Us): People {
       ink: m.ink,
       timezone: m.timezone,
       avatarUrl: m.avatar_url ?? null,
-      avatarIcon: m.avatar_icon,
     };
   return { meId: us.me.id, spaceId: us.space.id, byId };
 }

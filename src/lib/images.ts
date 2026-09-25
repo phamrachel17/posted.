@@ -90,19 +90,31 @@ export async function preparePhoto(file: File): Promise<{ blob: Blob; width: num
 
 const AVATAR_EDGE = 400;
 
-/** A square, center-cropped 400px JPEG for a profile picture. */
-export async function prepareAvatar(file: File): Promise<Blob> {
+/** Center-crops a photo to width × height and encodes it as JPEG. */
+async function cropTo(file: File, width: number, height: number): Promise<Blob> {
   const { blob } = await preparePhoto(file);
   const bitmap = await createImageBitmap(blob);
-  const side = Math.min(bitmap.width, bitmap.height);
+  const scale = Math.min(bitmap.width / width, bitmap.height / height);
+  const sw = width * scale;
+  const sh = height * scale;
   const canvas = document.createElement("canvas");
-  canvas.width = AVATAR_EDGE;
-  canvas.height = AVATAR_EDGE;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new PhotoError("This browser couldn't prepare the photo.");
-  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, AVATAR_EDGE, AVATAR_EDGE);
+  ctx.drawImage(bitmap, (bitmap.width - sw) / 2, (bitmap.height - sh) / 2, sw, sh, 0, 0, width, height);
   bitmap.close();
   const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", QUALITY));
   if (!out) throw new PhotoError("This browser couldn't prepare the photo.");
   return out;
+}
+
+/** A square, center-cropped 400px JPEG for a profile picture. */
+export function prepareAvatar(file: File): Promise<Blob> {
+  return cropTo(file, AVATAR_EDGE, AVATAR_EDGE);
+}
+
+/** A portrait photo for a postage stamp (5:6, like a real one). */
+export function prepareStamp(file: File): Promise<Blob> {
+  return cropTo(file, 300, 360);
 }

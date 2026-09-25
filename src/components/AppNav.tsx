@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { CSSProperties } from "react";
+import { useCallback, type CSSProperties } from "react";
 import { Doodle } from "./Doodle";
 import { NotebookDialog } from "./NotebookDialog";
 import { NotebookMark } from "./NotebookMark";
 import { OnlineDot } from "./Presence";
 import { SpaceList, type SpaceChoice } from "./SpaceSwitcher";
 import { RECORD_EVENT } from "@/lib/events";
+import { useDragSort } from "@/lib/drag-sort";
+import { reorderNotebooks } from "@/app/actions/notebooks";
 
 const LINKS: { href: string; label: string; doodle: string; sidebarOnly?: boolean }[] = [
   { href: "/", label: "Today", doodle: "nav-today" },
@@ -21,7 +23,7 @@ const LINKS: { href: string; label: string; doodle: string; sidebarOnly?: boolea
 
 type Person = { id?: string; name: string; style: CSSProperties };
 
-export type NavNotebook = { slug: string; name: string; doodle: string | null; isNew: boolean };
+export type NavNotebook = { id: string; slug: string; name: string; doodle: string | null; isNew: boolean };
 
 type Props = {
   me: Person;
@@ -35,6 +37,15 @@ type Props = {
 
 export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Props) {
   const pathname = usePathname();
+  // Drag notebooks to reorder them. The preview doesn't save.
+  const saveOrder = useCallback(
+    (ids: string[]) => {
+      if (!active) void reorderNotebooks(ids);
+    },
+    [active],
+  );
+  const { order, itemProps } = useDragSort(notebooks.map((n) => n.id), saveOrder);
+  const sortedNotebooks = order.map((id) => notebooks.find((n) => n.id === id)!).filter(Boolean);
   const router = useRouter();
 
   // Pages with a composer start recording in place; elsewhere, go to Today and record there.
@@ -66,12 +77,12 @@ export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Pro
               <span className="label">Notebooks</span>
               <NotebookDialog triggerClassName="nav-add" triggerLabel="Start a notebook" trigger={<Doodle name="plus" size={14} />} />
             </div>
-            <ul>
-              {notebooks.map((n) => {
+            <ul className="sortable">
+              {sortedNotebooks.map((n) => {
                 const href = `/n/${n.slug}`;
                 const here = !active && (pathname === href || pathname.startsWith(`${href}/`));
                 return (
-                  <li key={n.slug}>
+                  <li key={n.id} {...itemProps(n.id)}>
                     <Link
                       href={href}
                       className={n.isNew && !here ? "nav-nb is-new" : "nav-nb"}

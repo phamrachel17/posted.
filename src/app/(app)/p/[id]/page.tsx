@@ -41,7 +41,7 @@ export default async function PostPage({ params }: PageProps<"/p/[id]">) {
             return (
               <li key={reply.id} className="note" style={who ? inkStyle(who.ink) : undefined}>
                 <div className="author-line">
-                  {who && <Avatar name={who.name} ink={who.ink} url={who.avatarUrl} icon={who.avatarIcon} size={26} />}
+                  {who && <Avatar name={who.name} ink={who.ink} url={who.avatarUrl} size={26} />}
                   <b>{who?.name ?? "Someone"}</b>
                   <time dateTime={reply.created_at} title={exactTime(reply.created_at, us.me.timezone)}>
                     {spokenTime(reply.created_at, localStamp(new Date(reply.created_at), who?.timezone ?? us.me.timezone), us.me.timezone, now)}

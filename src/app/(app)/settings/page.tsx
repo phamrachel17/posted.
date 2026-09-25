@@ -1,8 +1,12 @@
 import { headers } from "next/headers";
-import { getMySpaces, getUs } from "@/lib/data";
+import { getMySpaces, getStampBook, getUs } from "@/lib/data";
+import { peopleOf } from "@/lib/people";
 import { signOut } from "@/app/actions/auth";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { SpaceList } from "@/components/SpaceSwitcher";
+import { StampSettings } from "@/components/StampSettings";
+import { SpotifyConnect } from "@/components/SpotifyConnect";
+import { spotifyStatus } from "@/lib/spotify-auth";
 import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
 
 async function origin() {
@@ -34,11 +38,16 @@ export default async function SettingsPage() {
 
       <section aria-labelledby="you">
         <h2 id="you" className="label">You</h2>
-        <AvatarPicker spaceId={space.id} name={me.display_name} ink={me.ink} url={me.avatar_url ?? null} icon={me.avatar_icon} />
+        <AvatarPicker spaceId={space.id} name={me.display_name} ink={me.ink} url={me.avatar_url ?? null} />
         <ProfileForm
           defaults={{ display_name: me.display_name, ink: me.ink, city: me.city, timezone: me.timezone }}
           takenInk={partner?.ink ?? null}
         />
+      </section>
+
+      <section aria-labelledby="stamp-title">
+        <h2 id="stamp-title" className="label">Your stamp</h2>
+        <StampSettings defaultStamp={me.stamp} book={await getStampBook()} people={peopleOf(us)} />
       </section>
 
       <section aria-labelledby="invite-title" id="invite">
@@ -62,6 +71,11 @@ export default async function SettingsPage() {
       <section aria-labelledby="visit">
         <h2 id="visit" className="label">Next visit</h2>
         <VisitForm date={space.next_visit_on} place={space.next_visit_place} />
+      </section>
+
+      <section aria-labelledby="spotify-title" id="spotify">
+        <h2 id="spotify-title" className="label">Spotify</h2>
+        <SpotifyConnect {...await spotifyStatus()} />
       </section>
 
       <section aria-labelledby="letter">

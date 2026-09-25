@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           me={{ name: us.me.display_name, style: inkStyle(us.me.ink) }}
           partner={us.partner && { id: us.partner.id, name: us.partner.display_name, style: inkStyle(us.partner.ink) }}
           spaces={spaces}
-          notebooks={notebooks.map((n) => ({ slug: n.slug, name: n.name, doodle: n.doodle, isNew: news.has(n.id) }))}
+          notebooks={notebooks.map((n) => ({ id: n.id, slug: n.slug, name: n.name, doodle: n.doodle, isNew: news.has(n.id) }))}
         />
         {children}
         <NewPostsNotice spaceId={us.space.id} meId={us.me.id} partnerName={us.partner?.display_name ?? null} />
