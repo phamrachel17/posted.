@@ -6,7 +6,9 @@ import { createPost } from "@/app/actions/posts";
 import { removeUpload, uploadPhoto } from "@/lib/upload";
 import { PhotoError } from "@/lib/images";
 import { RECORD_EVENT } from "@/lib/events";
-import type { DayMeta, NotebookRef } from "@/lib/types";
+import type { DayMeta, NotebookRef, Post } from "@/lib/types";
+import { localStamp } from "@/lib/time";
+import { PENDING_DONE_EVENT, PENDING_EVENT, type PendingDetail } from "./PendingPosts";
 import type { NewPhoto } from "@/app/actions/posts";
 import { Doodle } from "./Doodle";
 import { DayFields, dayBounds } from "./DayFields";
@@ -47,9 +49,12 @@ type Props = {
   timeZone?: string;
   /** Postage stamps, for posts to Today. Omit where posts don't get stamps. */
   stamps?: { book: BookStamp[]; defaultStamp: string | null; people: People; city: CityStamp | null };
+  /** Who's posting, so a new post can show up the moment it's sent. */
+  people?: People;
 };
 
-export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone, stamps }: Props) {
+export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeholder, preview, startRecording, timeZone, stamps, people: peopleProp }: Props) {
+  const people = peopleProp ?? stamps?.people;
   const draftKey = `posted:draft:${spaceId}:${fixedNotebook ?? "today"}`;
   const [mode, setMode] = useState<Mode>(startRecording ? "voice" : "write");
   const [autoStart, setAutoStart] = useState(Boolean(startRecording));
@@ -154,27 +159,61 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const ready = photos.filter((p) => p.photo).map((p) => p.photo!);
   const canPost =
     !preview && !pending &&
-    (mode === "day" ? Boolean(day.mood || day.note?.trim()) : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
+    (mode === "day" ? Boolean(day.mood || day.note?.trim()) && !uploading && !failed : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
+
+  /** The post as it will look, to show right away while the server saves it. */
+  function pendingPost(): Post | null {
+    const me = people?.byId[people.meId];
+    // A My day for an earlier day goes further down the feed, so it isn't shown on top.
+    if (!people || !me || (mode === "day" && dayDate !== dayBounds(zone).today)) return null;
+    const now = new Date();
+    return {
+      id: `pending-${crypto.randomUUID()}`,
+      author_id: people.meId,
+      kind: mode === "day" ? "day" : ready.length ? "photo" : "note",
+      body: mode === "day" ? null : body.trim() || null,
+      meta: mode === "day" ? { ...day } : {},
+      postmark: { city: me.city, tz: me.timezone, local: localStamp(now, me.timezone) },
+      created_at: now.toISOString(),
+      edited_at: null,
+      notebook: null,
+      photos: photos.filter((p) => p.photo).map((p) => ({ id: p.id, url: p.preview, width: p.photo!.width, height: p.photo!.height })),
+      audio: null,
+      reactions: [],
+      latestReply: null,
+      kept: false,
+      stamp: stampToSend ? currentStamp : null,
+    };
+  }
 
   function submit() {
     if (!canPost) return;
     setError(null);
+    const pending = pendingPost();
+    const sentBody = body;
+    if (pending) {
+      window.dispatchEvent(new CustomEvent<PendingDetail>(PENDING_EVENT, { detail: { post: pending, notebookId: target } }));
+      // The text box clears right away; it comes back if the post doesn't go through.
+      if (mode !== "day") setBody("");
+    }
     startTransition(async () => {
       const result =
         mode === "day"
-          ? await createPost({ body: "", notebookId: null, day: day as DayMeta, dayDate, stamp: stampToSend })
-          : await createPost({ body, notebookId: target, photos: ready, stamp: stampToSend });
+          ? await createPost({ body: "", notebookId: null, day: day as DayMeta, dayDate, photos: ready, stamp: stampToSend })
+          : await createPost({ body: sentBody, notebookId: target, photos: ready, stamp: stampToSend });
+      if (pending) window.dispatchEvent(new CustomEvent(PENDING_DONE_EVENT, { detail: pending.id }));
       if (result.error) {
         setError(result.error);
+        if (pending && mode !== "day") setBody(sentBody);
         return;
       }
+      photos.forEach((p) => URL.revokeObjectURL(p.preview));
+      setPhotos([]);
       if (mode === "day") {
         setDay({});
         setDayDate(dayBounds(zone).today);
         setMode("write");
       } else {
-        photos.forEach((p) => URL.revokeObjectURL(p.preview));
-        setPhotos([]);
         setBody("");
         storage(draftKey, "");
       }
@@ -220,8 +259,44 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         postFiles={mode === "write" ? photos.map((p) => ({ id: p.id, file: p.file, preview: p.preview })) : []}
         preview={preview}
       />
-      <span className="hint">Just for this post. Your usual stamp, your city unless you pick another, is set in Settings.</span>
+      <span className="hint">Just for this post. Change your usual one in Settings.</span>
     </div>
+  );
+
+  const photoBits = (
+    <>
+    {photos.length > 0 && (
+      <div className="composer-thumbs">
+        {photos.map((p) => (
+          <div className="composer-thumb" key={p.id} style={{ opacity: p.status === "uploading" ? 0.55 : 1 }}>
+            <img src={p.preview} alt="" />
+            <button type="button" onClick={() => remove(p)} aria-label="Remove photo">
+              <Doodle name="close" size={12} />
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {photos
+      .filter((p) => p.status === "failed")
+      .map((p) => (
+        <p className="error-note" key={`err-${p.id}`}>
+          <b>{p.problem?.title ?? "A photo didn’t upload."}</b>
+          <span>{p.problem?.detail ?? "Remove it and add it again."}</span>
+        </p>
+      ))}
+    </>
+  );
+
+  const photoButton = (
+    <>
+      <button type="button" className="composer-tool" onClick={() => fileRef.current?.click()}>
+        <Doodle name="camera" size={18} />
+        <span className="tool-label">Photo</span>
+      </button>
+      <input ref={fileRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => onPick(e.target.files)} />
+    </>
   );
 
   if (mode === "voice") {
@@ -251,10 +326,12 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
           <span className="hint">A mood or a note is enough</span>
         </div>
         <DayFields value={day} onChange={setDay} date={dayDate} onDate={setDayDate} timeZone={zone} />
+        {photoBits}
         {error && <p className="error-note"><b>{error}</b></p>}
         {stampPanel}
         <div className="composer-row">
           <button type="button" className="composer-tool" onClick={() => setMode("write")}>Cancel</button>
+          {photoButton}
           {stampButton}
           <span className="hint composer-day-where">{dayDate === dayBounds(zone).today ? "Posts to Today" : "Added to that day"}</span>
           <button type="submit" className="btn btn-primary" disabled={!canPost}>{pending ? "Posting…" : "Post"}</button>
@@ -285,36 +362,12 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         }}
       />
 
-      {photos.length > 0 && (
-        <div className="composer-thumbs">
-          {photos.map((p) => (
-            <div className="composer-thumb" key={p.id} style={{ opacity: p.status === "uploading" ? 0.55 : 1 }}>
-              <img src={p.preview} alt="" />
-              <button type="button" onClick={() => remove(p)} aria-label="Remove photo">
-                <Doodle name="close" size={12} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {photos
-        .filter((p) => p.status === "failed")
-        .map((p) => (
-          <p className="error-note" key={`err-${p.id}`}>
-            <b>{p.problem?.title ?? "A photo didn’t upload."}</b>
-            <span>{p.problem?.detail ?? "Remove it and add it again."}</span>
-          </p>
-        ))}
+      {photoBits}
       {error && <p className="error-note"><b>{error}</b></p>}
       {stampPanel}
 
       <div className="composer-row">
-        <button type="button" className="composer-tool" onClick={() => fileRef.current?.click()}>
-          <Doodle name="camera" size={18} />
-          <span className="tool-label">Photo</span>
-        </button>
-        <input ref={fileRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => onPick(e.target.files)} />
+        {photoButton}
         {!fixedNotebook && (
           <button type="button" className="composer-tool" onClick={() => setMode("day")}>
             <Doodle name="day" size={18} />

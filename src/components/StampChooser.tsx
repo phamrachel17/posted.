@@ -25,7 +25,9 @@ type Props = {
   city?: CityStamp | null;
 };
 
-/** The designed stamps and the shared stamp book, with a way to add a photo. */
+type Page = "city" | "designs" | "photos";
+
+/** The stamp book: your city, the designed stamps, and your shared photo stamps, a page each. */
 export function StampChooser({ value, onChange, book, onBookChange, people, postFiles = [], canRemove, preview, city }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -59,86 +61,98 @@ export function StampChooser({ value, onChange, book, onBookChange, people, post
     if (value === `photo:${s.path}`) onChange(`design:${STAMP_DESIGNS[0].id}`);
   }
 
+  // The book opens to the page that holds the stamp you're using.
+  const onPage: Page = value.startsWith("photo:") ? "photos" : value.startsWith("design:") ? "designs" : city ? "city" : "designs";
+  const [page, setPage] = useState<Page>(onPage);
+  const pages: { id: Page; label: string }[] = [
+    ...(city ? [{ id: "city" as const, label: "Your city" }] : []),
+    { id: "designs", label: "Designs" },
+    { id: "photos", label: `Our photos${book.length ? ` · ${book.length}` : ""}` },
+  ];
+
   return (
-    <div className="stamp-chooser">
-      {city && (
-        <div className="stamp-group">
-          <span className="label">Your city</span>
-          <div className="stamp-grid" role="radiogroup" aria-label="Your city">
-            <button type="button" role="radio" aria-checked={value === "city" || value === `city:${city.city}`} aria-label={city.city} title={city.city} onClick={() => onChange("city")}>
-              <Stamp stamp={{ kind: "city", ...city }} size="tray" />
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="stamp-group">
-        <span className="label">Designs</span>
-        <div className="stamp-grid" role="radiogroup" aria-label="Designed stamps">
-          {STAMP_DESIGNS.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              role="radio"
-              aria-checked={value === `design:${d.id}`}
-              aria-label={d.label}
-              title={d.label}
-              onClick={() => onChange(`design:${d.id}`)}
-            >
-              <Stamp stamp={{ kind: "design", design: d }} size="tray" />
-            </button>
-          ))}
-        </div>
+    <div className="stamp-album">
+      <div className="album-tabs" role="tablist" aria-label="Stamp book">
+        {pages.map((p) => (
+          <button key={p.id} type="button" role="tab" aria-selected={page === p.id} onClick={() => setPage(p.id)}>
+            {p.label}
+          </button>
+        ))}
       </div>
 
-      <div className="stamp-group">
-        <span className="label">Our stamp book</span>
-        <div className="stamp-grid" role="radiogroup" aria-label="Photo stamps">
-          {book.map((s) => {
-            const who = people.byId[s.addedBy];
-            const theirs = s.addedBy !== people.meId;
-            return (
-              <div key={s.id} className="stamp-cell">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={value === `photo:${s.path}`}
-                  aria-label={theirs && who ? `Photo stamp from ${who.name}` : "Your photo stamp"}
-                  onClick={() => onChange(`photo:${s.path}`)}
-                >
-                  <Stamp stamp={{ kind: "photo", url: s.url }} size="tray" />
-                </button>
-                {theirs && who && (
-                  <span className="stamp-from" style={inkStyle(who.ink) as CSSProperties}>from {who.name}</span>
-                )}
-                {!theirs && canRemove && (
-                  <button type="button" className="stamp-remove" aria-label="Take this stamp out of the book" onClick={() => remove(s)}>
-                    <Doodle name="close" size={10} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          {postFiles.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              className="stamp-add"
-              disabled={busy || preview}
-              onClick={() => addFrom(f.file)}
-              title="Make a stamp from this photo"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- a local preview of a file being posted */}
-              <img src={f.preview} alt="" />
-              <span>Use this photo</span>
+      <div className="album-page" role="tabpanel">
+        {page === "city" && city && (
+          <div className="album-strip" role="radiogroup" aria-label="Your city">
+            <button type="button" role="radio" aria-checked={value === "city" || value === `city:${city.city}`} aria-label={city.city} title={city.city} onClick={() => onChange("city")}>
+              <Stamp stamp={{ kind: "city", ...city }} size="album" />
             </button>
-          ))}
-          <button type="button" className="stamp-add" disabled={busy || preview} onClick={() => fileRef.current?.click()}>
-            <Doodle name="camera" size={18} />
-            <span>{busy ? "Adding…" : "Add a photo"}</span>
-          </button>
-          <input ref={fileRef} type="file" hidden accept="image/*,.heic,.heif" onChange={(e) => e.target.files?.[0] && addFrom(e.target.files[0])} />
-        </div>
-        {book.length === 0 && <span className="hint">Photos either of you turn into stamps are kept here for both of you.</span>}
+            <span className="hint album-note">Follows your city in Settings.</span>
+          </div>
+        )}
+
+        {page === "designs" && (
+          <div className="album-strip" role="radiogroup" aria-label="Designed stamps">
+            {STAMP_DESIGNS.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                role="radio"
+                aria-checked={value === `design:${d.id}`}
+                aria-label={d.label}
+                title={d.label}
+                onClick={() => onChange(`design:${d.id}`)}
+              >
+                <Stamp stamp={{ kind: "design", design: d }} size="album" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {page === "photos" && (
+          <>
+            <div className="album-strip" role="radiogroup" aria-label="Photo stamps">
+              {book.map((s) => {
+                const who = people.byId[s.addedBy];
+                const theirs = s.addedBy !== people.meId;
+                return (
+                  <span key={s.id} className="album-slot">
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={value === `photo:${s.path}`}
+                      aria-label={theirs && who ? `Photo stamp from ${who.name}` : "Your photo stamp"}
+                      title={theirs && who ? `From ${who.name}` : "Yours"}
+                      onClick={() => onChange(`photo:${s.path}`)}
+                    >
+                      <Stamp stamp={{ kind: "photo", url: s.url }} size="album" />
+                    </button>
+                    {/* A stamp the other person made carries a dot of their ink. */}
+                    {theirs && who && <i className="album-from" style={inkStyle(who.ink) as CSSProperties} aria-hidden />}
+                    {!theirs && canRemove && (
+                      <button type="button" className="stamp-remove" aria-label="Take this stamp out of the book" onClick={() => remove(s)}>
+                        <Doodle name="close" size={9} />
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+              {postFiles.map((f) => (
+                <button key={f.id} type="button" className="album-add" disabled={busy || preview} onClick={() => addFrom(f.file)} title="Make a stamp from this photo">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a local preview of a file being posted */}
+                  <img src={f.preview} alt="" />
+                </button>
+              ))}
+              <button type="button" className="album-add" disabled={busy || preview} onClick={() => fileRef.current?.click()} title="Add a photo stamp" aria-label="Add a photo stamp">
+                {busy ? "…" : <Doodle name="plus" size={16} />}
+              </button>
+              <input ref={fileRef} type="file" hidden accept="image/*,.heic,.heif" onChange={(e) => e.target.files?.[0] && addFrom(e.target.files[0])} />
+            </div>
+            <span className="hint album-note">
+              {book.some((s) => s.addedBy !== people.meId) ? "A colored dot means the other person made it. " : ""}
+              {postFiles.length ? "Tap a photo from this post to make it a stamp." : "Photos either of you add are kept here for both of you."}
+            </span>
+          </>
+        )}
       </div>
       {error && <p className="error-note"><b>{error}</b></p>}
     </div>

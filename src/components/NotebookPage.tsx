@@ -14,6 +14,7 @@ import { LessonSheet } from "./LessonSheet";
 import { MarkNotebookRead } from "./MarkNotebookRead";
 import { NotebookDialog } from "./NotebookDialog";
 import { NotebookMark } from "./NotebookMark";
+import { PendingPosts } from "./PendingPosts";
 
 export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: number }) {
   const [us, notebook] = await Promise.all([getUs(), getNotebook(decodeURIComponent(slug))]);
@@ -104,13 +105,15 @@ export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: 
               </div>
             )}
             <h2 className="section-title">Everything else</h2>
-            <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} />
+            <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} />
+            <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} />
             <FeedList posts={posts} people={people} viewerTz={us.me.timezone} now={now} hideNotebook headTodayGroup />
           </div>
         </div>
       ) : (
         <>
-          <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} />
+          <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} />
+            <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} />
           {posts.length === 0 ? (
             <div className="empty">
               <Doodle name="empty-notebook" size={150} height={122} />

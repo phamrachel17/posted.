@@ -23,8 +23,8 @@ export default function BucketPreview() {
     meId: "rachel",
     spaceId: "s",
     byId: {
-      rachel: { name: "Rachel", ink: "blue" as const, timezone: "America/New_York", avatarUrl: null },
-      arya: { name: "Arya", ink: "verdigris" as const, timezone: "America/Los_Angeles", avatarUrl: null },
+      rachel: { name: "Rachel", ink: "blue" as const, timezone: "America/New_York", avatarUrl: null, city: "Brooklyn" },
+      arya: { name: "Arya", ink: "verdigris" as const, timezone: "America/Los_Angeles", avatarUrl: null, city: "Seattle" },
     },
   };
   return (

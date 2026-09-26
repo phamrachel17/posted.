@@ -332,7 +332,7 @@ export async function getStampBook(): Promise<BookStamp[]> {
 // Hand-made scrapbook pages
 // ---------------------------------------------------------------------------
 
-export type PieceKind = "photo" | "video" | "gif" | "sticker" | "text";
+export type PieceKind = "photo" | "video" | "gif" | "sticker" | "text" | "drawing";
 
 export type Piece = {
   id: string;
@@ -344,6 +344,8 @@ export type Piece = {
   sticker: string | null;
   body: string | null;
   color: string | null;
+  /** A drawing's strokes: JSON [{ s: pen width, d: SVG path }] in a width × height box. */
+  strokes?: string | null;
   x: number;
   y: number;
   w: number;
@@ -354,7 +356,7 @@ export type Piece = {
 
 export type ScrapPage = { id: string; title: string; created_by: string; updated_at: string; pieces: Piece[] };
 
-const PIECE_COLUMNS = "id, kind, path, width, height, duration_ms, sticker, body, color, x, y, w, rotation, z, created_by";
+const PIECE_COLUMNS = "id, kind, path, width, height, duration_ms, sticker, body, color, strokes, x, y, w, rotation, z, created_by";
 
 type PieceRow = Omit<Piece, "url"> & { path: string | null };
 

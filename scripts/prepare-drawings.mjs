@@ -16,14 +16,15 @@ const OUTPUTS = [
   // file in /drawings      name in the app       shape           px    thicken (source px)
   { src: "dancing_couple.PNG", name: "logo", shape: "natural", size: 900, thicken: 3 },
   { src: "dancing_couple.PNG", name: "logo-small", shape: "natural", size: 240, thicken: 10 },
-  { src: "today.PNG", name: "nav-today", shape: "square", size: 160, thicken: 16 },
+  { src: "flower.PNG", name: "nav-today", shape: "square", size: 160, thicken: 0 },
+  { src: "sea_otters.PNG", name: "nav-scrapbook", shape: "square", size: 160, thicken: 110, boost: 16 },
   { src: "today.PNG", name: "empty-today", shape: "natural", size: 360, thicken: 0 },
   { src: "notebook.PNG", name: "nav-notebooks", shape: "square", size: 160, thicken: 14 },
   { src: "notebook.PNG", name: "empty-notebook", shape: "natural", size: 360, thicken: 0 },
   { src: "language.PNG", name: "empty-lessons", shape: "natural", size: 480, thicken: 2 },
   { src: "language.PNG", name: "nb-language", shape: "square", size: 160, thicken: 18 },
   { src: "music.PNG", name: "nb-music", shape: "square", size: 160, thicken: 14 },
-  { src: "movie.PNG", name: "nb-popcorn", shape: "square", size: 160, thicken: 14 },
+  { src: "movie.PNG", name: "nb-popcorn", shape: "square", size: 160, thicken: 6 },
   { src: "book.PNG", name: "nb-reading", shape: "square", size: 160, thicken: 16 },
   { src: "cooking.PNG", name: "nb-cooking", shape: "square", size: 160, thicken: 26 },
   { src: "exercise.PNG", name: "nb-exercise", shape: "square", size: 160, thicken: 24 },
@@ -34,6 +35,32 @@ const OUTPUTS = [
   { src: "tired_mood.PNG", name: "mood-tired", shape: "square", size: 160, thicken: 20 },
   { src: "stressed_mood.PNG", name: "mood-stressed", shape: "square", size: 160, thicken: 20 },
   { src: "sad_mood.PNG", name: "mood-down", shape: "square", size: 160, thicken: 20 },
+  // Heart: reactions, the heart sticker, and the heart stamp.
+  { src: "heart.PNG", name: "heart", shape: "square", size: 160, thicken: 8 },
+  // Weather, beside each clock and on older My day cards.
+  { src: "sun.PNG", name: "weather-clear", shape: "square", size: 160, thicken: 22 },
+  { src: "sun.PNG", name: "weather-bright-spells", shape: "square", size: 160, thicken: 22 },
+  { src: "cloud.PNG", name: "weather-overcast", shape: "square", size: 160, thicken: 22 },
+  { src: "rainy_clouds.PNG", name: "weather-drizzle", shape: "square", size: 160, thicken: 22 },
+  { src: "stormy_cloud.PNG", name: "weather-stormy", shape: "square", size: 160, thicken: 22 },
+  // Stickers and notebook icons ("d-" for doodle).
+  { src: "flower.PNG", name: "d-flower", shape: "natural", size: 360, thicken: 0 },
+  { src: "flower_stem.PNG", name: "d-flower-stem", shape: "natural", size: 360, thicken: 0 },
+  { src: "butterfly.PNG", name: "d-butterfly", shape: "natural", size: 360, thicken: 4 },
+  { src: "strawberries.PNG", name: "d-strawberries", shape: "natural", size: 360, thicken: 4 },
+  { src: "swirls.PNG", name: "d-swirls", shape: "natural", size: 360, thicken: 4 },
+  { src: "balloon.PNG", name: "d-balloon", shape: "natural", size: 360, thicken: 8 },
+  { src: "flower_cat.PNG", name: "d-flower-cat", shape: "natural", size: 360, thicken: 4 },
+  { src: "melt_clock.PNG", name: "d-melting-clock", shape: "natural", size: 360, thicken: 2 },
+  { src: "doge.PNG", name: "d-dog", shape: "natural", size: 360, thicken: 4 },
+  { src: "sea_otters.PNG", name: "d-sea-otters", shape: "natural", size: 420, thicken: 3 },
+  { src: "house.PNG", name: "d-house", shape: "natural", size: 420, thicken: 3 },
+  { src: "sprig.PNG", name: "d-sprig", shape: "natural", size: 420, thicken: 8 },
+  { src: "calm_face.PNG", name: "d-sleepy-face", shape: "natural", size: 300, thicken: 4 },
+  { src: "sun.PNG", name: "d-sun", shape: "natural", size: 360, thicken: 8 },
+  { src: "cloud.PNG", name: "d-cloud", shape: "natural", size: 360, thicken: 8 },
+  { src: "rainy_clouds.PNG", name: "d-rain", shape: "natural", size: 360, thicken: 8 },
+  { src: "stormy_cloud.PNG", name: "d-storm", shape: "natural", size: 360, thicken: 8 },
   { src: "saved.PNG", name: "kept", shape: "square", size: 128, thicken: 0 },
   { src: "saved.PNG", name: "nav-kept", shape: "square", size: 128, thicken: 0 },
   { src: "saved.PNG", name: "empty-kept", shape: "natural", size: 240, thicken: 0 },
@@ -81,7 +108,7 @@ async function inkBox(file) {
   return { left, top, width: right - left + 1, height: bottom - top + 1 };
 }
 
-async function prepare({ src, name, shape, size, thicken }) {
+async function prepare({ src, name, shape, size, thicken, boost = 4 }) {
   const file = `drawings/${src}`;
   const box = await inkBox(file);
   const pad = Math.round(Math.max(box.width, box.height) * PAD) + thicken;
@@ -102,9 +129,10 @@ async function prepare({ src, name, shape, size, thicken }) {
   }
   const raw = (width, height) => ({ raw: { width, height, channels: 1 } });
 
-  // Thicken lines: blur the alpha, then push partial coverage up to solid.
+  // Thicken lines: blur the alpha, then push partial coverage up to solid. Detailed
+  // drawings with fine lines need a stronger push (boost) or the blur just fades them.
   if (thicken > 0) {
-    alpha = await sharp(alpha, raw(w, h)).blur(thicken / 2).linear(4, 0).extractChannel(0).raw().toBuffer();
+    alpha = await sharp(alpha, raw(w, h)).blur(thicken / 2).linear(boost, 0).extractChannel(0).raw().toBuffer();
   }
 
   const scale = size / Math.max(w, h);

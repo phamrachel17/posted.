@@ -13,10 +13,11 @@ export function coverColor(cover: string | null | undefined) {
   return COVERS[(cover as Cover) ?? "stone"] ?? COVERS.stone;
 }
 
-/** Doodles offered in the notebook picker. Any file named nb-*.svg can be used. */
+/** Drawings offered in the notebook picker, all hand-drawn. */
 export const NOTEBOOK_DOODLES = [
-  "nb-popcorn", "nb-music", "nb-language", "nb-reading", "nb-cooking", "nb-exercise", "nb-yoga", "nb-book", "nb-film", "nb-pan",
-  "nb-star", "nb-plane", "nb-thought", "nb-enye", "nb-heart", "nb-sun", "nb-camera", "nb-leaf",
+  "nb-popcorn", "nb-music", "nb-language", "nb-reading", "nb-cooking", "nb-exercise", "nb-yoga",
+  "heart", "d-flower", "d-flower-stem", "d-butterfly", "d-strawberries", "d-balloon", "d-house", "d-dog",
+  "d-sea-otters", "d-flower-cat", "d-melting-clock", "d-sprig", "d-sun", "d-cloud", "d-swirls", "d-sleepy-face",
 ];
 
 /** A notebook's doodle is either a file name ("nb-film") or text ("text:🎬"). */

@@ -5,7 +5,7 @@ export type StampDesign = { id: string; label: string; doodle: string; paper: st
 
 export const STAMP_DESIGNS: StampDesign[] = [
   { id: "dancing", label: "Dancing", doodle: "logo-small", paper: "#f4dcd6", ink: "#8b1e2b" },
-  { id: "tulip", label: "Tulip", doodle: "nav-today", paper: "#e3ecdd", ink: "#2e6a50" },
+  { id: "tulip", label: "Tulip", doodle: "empty-today", paper: "#e3ecdd", ink: "#2e6a50" },
   { id: "stars", label: "Tied stars", doodle: "nav-you-two", paper: "#dce4f2", ink: "#2a4b8d" },
   { id: "record", label: "Music", doodle: "nb-music", paper: "#f5ebcb", ink: "#6b4a2b" },
   { id: "popcorn", label: "Popcorn", doodle: "nb-popcorn", paper: "#f6e0d2", ink: "#b3563f" },

@@ -22,7 +22,7 @@ export function NotebookDialog({ notebook, trigger, triggerClassName, triggerLab
   const action = notebook ? updateNotebook.bind(null, notebook.id) : createNotebook;
   const [state, formAction] = useActionState<FormState, FormData>(action, {});
   const startText = isTextDoodle(notebook?.doodle);
-  const [doodle, setDoodle] = useState(startText ? "text" : (notebook?.doodle ?? "nb-book"));
+  const [doodle, setDoodle] = useState(startText ? "text" : (notebook?.doodle ?? "nav-notebooks"));
 
   return (
     <>

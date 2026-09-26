@@ -14,7 +14,7 @@ export function inkColor(color: string | null) {
   return color && isInk(color) ? INKS[color].color : "var(--ink)";
 }
 
-/** What a piece looks like: photo, looping video, GIF, sticker, or handwritten note. */
+/** What a piece looks like: photo, looping video, GIF, sticker, note, or drawing. */
 export function PieceContent({ piece, thumb, muted = true }: { piece: Piece; thumb?: boolean; muted?: boolean }) {
   switch (piece.kind) {
     case "photo":
@@ -42,6 +42,22 @@ export function PieceContent({ piece, thumb, muted = true }: { piece: Piece; thu
           aria-hidden
         />
       );
+    case "drawing": {
+      let strokes: { s: number; d: string }[] = [];
+      try {
+        strokes = JSON.parse(piece.strokes ?? "[]");
+      } catch {
+        // A broken drawing just draws nothing.
+      }
+      const w = piece.width ?? 100, h = piece.height ?? 100;
+      return (
+        <svg className="piece-drawing" viewBox={`0 0 ${w} ${h}`} style={{ aspectRatio: `${w} / ${h}`, color: inkColor(piece.color) }} aria-hidden>
+          {strokes.map((st, i) => (
+            <path key={i} d={st.d} strokeWidth={st.s} />
+          ))}
+        </svg>
+      );
+    }
     case "text":
       return (
         <p className="piece-text" style={{ color: inkColor(piece.color) }}>

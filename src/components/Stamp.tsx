@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { StampView } from "@/lib/stamps";
 import { doodleUrl } from "./Doodle";
 
-type Props = { stamp: StampView; size?: "tiny" | "small" | "big" | "tray"; className?: string };
+type Props = { stamp: StampView; size?: "tiny" | "small" | "big" | "tray" | "album"; className?: string };
 
 // A lettered city stamp picks its paper from the city's name, so each city keeps its color.
 const LETTERED = [

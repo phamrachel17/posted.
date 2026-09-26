@@ -61,6 +61,8 @@ export type NewPiece = {
   sticker?: string;
   body?: string;
   color?: string;
+  /** Drawings only: JSON [{ s, d }] strokes. */
+  strokes?: string;
   x: number;
   y: number;
   w: number;
@@ -68,10 +70,27 @@ export type NewPiece = {
   z: number;
 };
 
+/** Keeps a drawing's strokes to what they should be: pen widths and plain path commands. */
+function cleanStrokes(raw: unknown): string | null {
+  if (typeof raw !== "string" || raw.length > 60000) return null;
+  try {
+    const list = JSON.parse(raw) as { s?: unknown; d?: unknown }[];
+    if (!Array.isArray(list) || !list.length || list.length > 400) return null;
+    const clean = list
+      .filter((x) => typeof x.d === "string" && /^[MLQ0-9 .\-]+$/.test(x.d) && typeof x.s === "number")
+      .map((x) => ({ s: Math.min(40, Math.max(0.5, x.s as number)), d: x.d as string }));
+    return clean.length ? JSON.stringify(clean) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function addPiece(pageId: string, piece: NewPiece): Promise<Result> {
   const us = await getUs();
   if (!us) return { error: "Sign in again." };
   if (piece.path && !piece.path.startsWith(`${us.space.id}/`)) return { error: "That upload didn't work. Try again." };
+  const strokes = piece.kind === "drawing" ? cleanStrokes(piece.strokes) : null;
+  if (piece.kind === "drawing" && !strokes) return { error: "That drawing didn't save. Try again." };
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -89,6 +108,7 @@ export async function addPiece(pageId: string, piece: NewPiece): Promise<Result>
       sticker: piece.sticker?.slice(0, 60) ?? null,
       body: piece.body?.slice(0, 300) ?? null,
       color: piece.color?.slice(0, 20) ?? null,
+      strokes,
       x: clamp(piece.x, -50, 150),
       y: clamp(piece.y, -50, 150),
       w: clamp(piece.w, 3, 100),

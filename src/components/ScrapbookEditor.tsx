@@ -9,6 +9,7 @@ import { STICKER_GROUPS } from "@/lib/stickers";
 import { uploadGif, uploadPhoto, uploadVideo } from "@/lib/upload";
 import { Doodle, doodleUrl } from "./Doodle";
 import { PieceContent, pieceStyle } from "./PieceContent";
+import { DrawOverlay, PEN_SIZES, useDrawing } from "./DrawLayer";
 
 type Props = {
   page: { id: string; title: string };
@@ -42,6 +43,10 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
   const [uploading, setUploading] = useState(0);
   const [error, setError] = useState<{ title: string; detail?: string } | null>(null);
   const [soundOn, setSoundOn] = useState<string | null>(null);
+  // Drawing on the page: while it's on, the page takes strokes instead of moving pieces.
+  const [drawing, setDrawing] = useState(false);
+  const [drawInk, setDrawInk] = useState<Ink>(myInk);
+  const draw = useDrawing();
   const [, startTransition] = useTransition();
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -253,7 +258,60 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
         </details>
       </div>
 
+      {drawing ? (
+        <div className="editor-bar draw-bar" role="toolbar" aria-label="Drawing">
+          <span className="draw-sizes" role="radiogroup" aria-label="Pen">
+            {PEN_SIZES.map((p) => (
+              <button key={p.id} type="button" role="radio" aria-checked={draw.size === p.s} aria-label={p.label} title={p.label} onClick={() => draw.setSize(p.s)}>
+                <i style={{ width: p.s + 3, height: p.s + 3, background: INKS[drawInk].color }} />
+              </button>
+            ))}
+          </span>
+          <span className="ink-choices" role="group" aria-label="Ink">
+            {INK_IDS.map((ink) => (
+              <button key={ink} type="button" aria-label={INKS[ink].label} aria-pressed={drawInk === ink} style={{ background: INKS[ink].color }} onClick={() => setDrawInk(ink)} />
+            ))}
+          </span>
+          <button type="button" className="b-tool" onClick={draw.undo} disabled={!draw.strokes.length}>Undo</button>
+          <span className="draw-actions">
+            <button
+              type="button"
+              className="b-tool"
+              onClick={() => {
+                draw.clear();
+                setDrawing(false);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                const r = draw.result();
+                draw.clear();
+                setDrawing(false);
+                if (r) add({ kind: "drawing", strokes: r.strokes, width: r.width, height: r.height, color: drawInk, x: r.x, y: r.y, w: r.w, rotation: 0, z: topZ() }, { strokes: r.strokes });
+              }}
+            >
+              Done
+            </button>
+          </span>
+        </div>
+      ) : (
       <div className="editor-bar" role="toolbar" aria-label="Add to the page">
+        <button
+          type="button"
+          className="b-tool"
+          onClick={() => {
+            if (editingText) finishEditing();
+            setSelected(null);
+            setTray("none");
+            setDrawing(true);
+          }}
+        >
+          <Doodle name="pen" size={18} /> Draw
+        </button>
         <button type="button" className="b-tool" onClick={() => fileRef.current?.click()}>
           <Doodle name="camera" size={18} /> Photo, video, or GIF
         </button>
@@ -262,10 +320,11 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
           <Doodle name="heart" size={18} /> Sticker
         </button>
         <button type="button" className="b-tool" aria-expanded={tray === "caption"} onClick={() => setTray(tray === "caption" ? "none" : "caption")}>
-          <Doodle name="pen" size={18} /> Handwritten note
+          <Doodle name="pen" size={18} /> Note
         </button>
         {uploading > 0 && <span className="hint">Uploading{uploading > 1 ? ` ${uploading} files` : ""}…</span>}
       </div>
+      )}
 
       {tray === "stickers" && (
         <div className="sticker-tray">
@@ -319,7 +378,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
       <div className="canvas-wrap">
         <div
           ref={canvasRef}
-          className="page-canvas"
+          className={drawing ? "page-canvas is-drawing" : "page-canvas"}
           onPointerDown={() => {
             if (editingText) finishEditing();
             setSelected(null);
@@ -330,7 +389,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
         >
           {pieces.length === 0 && (
             <p className="canvas-empty">
-              Add photos, short videos, GIFs, stickers, or a handwritten note, then drag them wherever you like.
+              Add photos, short videos, GIFs, stickers, notes, or a drawing, then drag them wherever you like.
             </p>
           )}
           {pieces.map((p) => (
@@ -363,7 +422,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
               ) : (
                 <PieceContent piece={p} muted={soundOn !== p.id} />
               )}
-              {p.id === selected && !editingText && (
+              {p.id === selected && !editingText && !drawing && (
                 <>
                   <span className="h-rotate" aria-hidden onPointerDown={(e) => begin(e, p.id, "rotate")} />
                   <span className="h-resize" aria-hidden onPointerDown={(e) => begin(e, p.id, "resize")} />
@@ -371,6 +430,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
               )}
             </div>
           ))}
+          {drawing && <DrawOverlay drawing={draw} color={INKS[drawInk].color} canvasRef={canvasRef} />}
         </div>
       </div>
 
@@ -400,7 +460,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
               {soundOn === sel.id ? "Sound off" : "Sound on"}
             </button>
           )}
-          {(sel.kind === "text" || sel.kind === "sticker") && (
+          {(sel.kind === "text" || sel.kind === "sticker" || sel.kind === "drawing") && (
             <span className="ink-choices" role="group" aria-label="Color">
               {INK_IDS.map((ink) => (
                 <button
@@ -423,7 +483,7 @@ export function ScrapbookEditor({ page, initialPieces, spaceId, meId, myInk }: P
         </div>
       )}
       <p className="hint">
-        Drag to move. Pull the corner dot to resize and the top dot to turn. Double-click a note to change its words. Changes save as you go.
+        Drag to move. Pull the corner dot to resize and the top dot to turn. Double-click a note to change its words. Draw to doodle anywhere on the page. Changes save as you go.
       </p>
     </div>
   );

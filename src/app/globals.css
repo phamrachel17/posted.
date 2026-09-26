@@ -1020,6 +1020,22 @@ a.space-row:hover {
       0 22px 32px -16px rgb(28 33 43 / 0.34);
   }
 }
+/* Deleted: fades and folds away at once, while the server removes it. */
+[data-removing] {
+  pointer-events: none;
+  animation: remove 240ms ease-in forwards;
+}
+@keyframes remove {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-removing] {
+    animation-duration: 1ms;
+  }
+}
 .author-line {
   display: flex;
   align-items: center;
@@ -1442,6 +1458,139 @@ a.space-row:hover {
 .stamp-add:disabled {
   opacity: 0.5;
   cursor: default;
+}
+/* The stamp book: one page at a time, stamps tucked into a glassine strip. */
+.pstamp-album {
+  width: 42px;
+  height: 54px;
+  padding: 4px;
+}
+.stamp-album {
+  /* A stock book page: a muted sage-grey, darker than the paper so the stamps stand out. */
+  --album: #c4c9be;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+}
+.album-tabs {
+  display: flex;
+  gap: 2px;
+  padding-left: 6px;
+}
+/* Paper index tabs; the open one is part of the page. */
+.album-tabs button {
+  border: 0;
+  border-radius: 3px 3px 0 0;
+  background: var(--paper-2);
+  padding: 4px 11px 3px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.album-tabs button[aria-selected="true"] {
+  position: relative;
+  z-index: 1;
+  background: var(--album);
+  color: var(--ink);
+  font-weight: 500;
+}
+/* The page: plain paper, a shade darker than the card it sits on. */
+.album-page {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 2px;
+  background: var(--card-stock), var(--album);
+  box-shadow: inset 0 1px 2px rgb(28 33 43 / 0.08);
+}
+/* The strip: a glassine sleeve the stamps slip into, like a stock book. */
+.album-strip {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  background: linear-gradient(rgb(255 255 255 / 0.34), rgb(255 255 255 / 0.18));
+  border-top: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow: 0 1px 1px rgb(28 33 43 / 0.12);
+}
+.album-strip > *,
+.album-slot {
+  flex: none;
+}
+.album-strip button,
+.album-slot > button:first-child {
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: transform 0.12s;
+}
+.album-strip .pstamp {
+  filter: drop-shadow(0 1px 1px rgb(28 33 43 / 0.2));
+}
+.album-strip button:hover {
+  transform: translateY(-2px) rotate(-2deg);
+}
+.album-strip [aria-checked="true"] {
+  outline: 1.5px solid var(--ink-c, var(--ink));
+  outline-offset: 3px;
+}
+.album-slot {
+  position: relative;
+  display: inline-flex;
+}
+.album-from {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-c);
+  box-shadow: 0 0 0 2px var(--album);
+}
+.album-slot .stamp-remove {
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+}
+.album-add {
+  width: 42px;
+  height: 54px;
+  display: grid !important;
+  place-items: center;
+  border: 1.5px dashed rgb(28 33 43 / 0.3) !important;
+  border-radius: 2px !important;
+  color: var(--ink-2);
+  overflow: hidden;
+}
+.album-add img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+}
+.album-add:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.album-note {
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.album-strip .album-note {
+  flex: 1 0 140px;
+  padding-left: 4px;
 }
 .composer-stamps {
   display: flex;
@@ -2129,12 +2278,17 @@ button.chip:hover {
   grid-template-columns: 118px 1fr;
   gap: 20px;
 }
+/* In the My day composer, the prompt headers are written in your ink. */
+.composer .field > .label {
+  color: var(--ink-c);
+}
 .day-fields dt {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  /* Written in the author's ink, like their name above. */
+  color: var(--ink-c);
   padding-top: 5px;
 }
 .day-fields dd {
@@ -2925,6 +3079,66 @@ button.chip:hover {
   overflow: hidden;
   container-type: inline-size;
   touch-action: none;
+}
+/* Drawing on a page: strokes in ink, round like a felt pen. */
+.draw-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 100000;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+.draw-layer path,
+.piece-drawing path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.page-canvas.is-drawing .piece {
+  pointer-events: none;
+}
+.page-canvas.is-drawing {
+  box-shadow: var(--shadow-card), 0 0 0 2px var(--ink-c, var(--ink));
+}
+.piece-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.draw-bar {
+  align-items: center;
+  gap: 12px;
+}
+.draw-sizes {
+  display: inline-flex;
+  gap: 4px;
+}
+.draw-sizes button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--card);
+  cursor: pointer;
+}
+.draw-sizes button[aria-checked="true"] {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.draw-sizes i {
+  display: block;
+  border-radius: 50%;
+}
+.draw-actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
 }
 .page-canvas.is-thumb {
   touch-action: auto;

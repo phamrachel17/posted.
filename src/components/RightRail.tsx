@@ -54,14 +54,15 @@ export async function RightRail({ us, now, jukebox, preview, spotifyResult }: Pr
   const days = space.next_visit_on ? daysUntil(space.next_visit_on, me.timezone, now) : null;
 
   // Weather and distance; any of these can come back null and the rail simply leaves it out.
-  const spotify = preview ? undefined : await spotifyStatus();
-  const [myPlace, theirPlace] = await Promise.all([
-    geocode(me.city, me.timezone),
-    partner ? geocode(partner.city, partner.timezone) : Promise.resolve(null),
-  ]);
-  const [myWeather, theirWeather] = await Promise.all([
-    myPlace ? conditions(myPlace) : Promise.resolve(null),
-    theirPlace ? conditions(theirPlace) : Promise.resolve(null),
+  // Spotify, both places, and both forecasts all at once.
+  const placeAndWeather = async (city: string, tz: string) => {
+    const place = await geocode(city, tz);
+    return [place, place ? await conditions(place) : null] as const;
+  };
+  const [spotify, [myPlace, myWeather], [theirPlace, theirWeather]] = await Promise.all([
+    preview ? Promise.resolve(undefined) : spotifyStatus(),
+    placeAndWeather(me.city, me.timezone),
+    partner ? placeAndWeather(partner.city, partner.timezone) : Promise.resolve([null, null] as const),
   ]);
   const km = myPlace && theirPlace ? distanceKm(myPlace, theirPlace) : null;
   const names = Object.fromEntries([me, partner].filter(Boolean).map((m) => [m!.id, m!.display_name]));

@@ -26,9 +26,9 @@ type Props = {
   detail?: boolean;
   /** Design preview: nothing is interactive. */
   readOnly?: boolean;
+  /** Just sent: the card lands on the wall and the postmark stamps it. */
+  landing?: boolean;
 };
-
-const NEW_STAMP_MS = 20_000;
 
 function LessonBody({ meta, post }: { meta: LessonMeta; post: Post }) {
   const href = post.notebook ? `/n/${post.notebook.slug}/lessons/${meta.n}` : `/p/${post.id}`;
@@ -46,10 +46,10 @@ function LessonBody({ meta, post }: { meta: LessonMeta; post: Post }) {
   );
 }
 
-export function PostCard({ post, people, viewerTz, now, hideNotebook, detail, readOnly }: Props) {
+export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnly, landing }: Props) {
   const author = people.byId[post.author_id];
   const isMine = post.author_id === people.meId;
-  const isNew = isMine && now.getTime() - new Date(post.created_at).getTime() < NEW_STAMP_MS;
+  const isNew = Boolean(landing);
   const n = post.photos.length;
   const replier = post.latestReply ? people.byId[post.latestReply.author_id] : null;
   const canEdit = post.kind !== "lesson";

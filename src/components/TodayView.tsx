@@ -7,6 +7,7 @@ import { Composer } from "./Composer";
 import { Doodle } from "./Doodle";
 import { FeedList } from "./FeedList";
 import { RightRail, type JukeboxData } from "./RightRail";
+import { PendingPosts } from "./PendingPosts";
 
 type Props = {
   us: Us;
@@ -47,6 +48,8 @@ export function TodayView({ us, posts, now, olderHref, older, startRecording, pr
             stamps={{ book: stampBook ?? [], defaultStamp: me.stamp, people: peopleOf(us), city: { city: me.city, url: cityStampUrl ?? null } as CityStamp }}
           />
         )}
+
+        {!older && !preview && <PendingPosts people={peopleOf(us)} viewerTz={me.timezone} />}
 
         {posts.length === 0 && !older && (
           <div className="empty">

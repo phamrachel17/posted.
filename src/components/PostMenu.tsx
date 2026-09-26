@@ -53,7 +53,18 @@ export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete, kind = 
       {open && (
         <div className="post-menu-panel" role="menu">
           {confirming ? (
-            <form action={isReply ? deleteReply : deletePost} className="menu-confirm">
+            <form
+              action={isReply ? deleteReply : deletePost}
+              className="menu-confirm"
+              onSubmit={(e) => {
+                // Take it off the page now; the server catches up behind it.
+                if (leaveOnDelete) return;
+                const item = e.currentTarget.closest<HTMLElement>(isReply ? "li.note, .reply-preview" : "article.card");
+                if (!item) return;
+                item.setAttribute("data-removing", "");
+                window.setTimeout(() => (item.hidden = true), 240);
+              }}
+            >
               <input type="hidden" name="id" value={postId} />
               {leaveOnDelete && <input type="hidden" name="leave" value="1" />}
               <span>{isReply ? "Delete this note?" : "Delete this post?"} This can&rsquo;t be undone.</span>

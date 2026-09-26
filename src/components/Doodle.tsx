@@ -20,9 +20,24 @@ function pick(seed: string, count: number) {
   return (Math.abs(h) % count) + 1;
 }
 
-/** The file URL for a drawing: the hand-drawn PNG if there is one, else the placeholder SVG. */
+// Placeholder doodles that were replaced by Rachel's drawings. Anything saved with an
+// old name (a scrapbook sticker, a notebook's icon) shows the closest drawing instead.
+const RETIRED: Record<string, string> = {
+  "st-flower": "d-flower", "st-daisy": "d-flower", "st-plant": "d-sprig", "nb-leaf": "d-sprig",
+  "st-butterfly": "d-butterfly", "st-balloon": "d-balloon", "st-house": "d-house",
+  "st-heart-filled": "heart", "nb-heart": "heart", "st-sparkle": "d-swirls", "st-sparkles": "d-swirls",
+  "nb-star": "d-swirls", "st-moon": "d-sleepy-face", "nb-sun": "d-sun", "st-rainbow": "d-sun",
+  "st-notes": "nb-music", "nb-film": "nb-popcorn", "st-ticket": "nb-popcorn", "nb-pan": "nb-cooking",
+  "st-coffee": "nb-cooking", "nb-book": "nb-reading", "nb-enye": "nb-language", "st-speech": "nb-language",
+  "nb-thought": "d-cloud", "nb-plane": "d-cloud", "st-pin": "kept", "nb-camera": "d-house",
+  "st-gift": "heart", "st-crown": "d-flower-cat", "st-arrow": "d-swirls",
+  "st-envelope": "heart", "st-stamp": "heart", "st-tape": "d-swirls",
+};
+
+/** The file URL for a drawing: the hand-drawn PNG if there is one, else the SVG icon. */
 export function doodleUrl(name: string) {
-  return `/doodles/${DRAWN.has(name) ? `${name}.png` : `${name}.svg`}`;
+  const n = RETIRED[name] ?? name;
+  return `/doodles/${DRAWN.has(n) ? `${n}.png` : `${n}.svg`}`;
 }
 
 /**
