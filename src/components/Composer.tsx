@@ -73,8 +73,8 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const [stamp, setStamp] = useState(stamps?.defaultStamp || DEFAULT_STAMP);
   const [book, setBook] = useState<BookStamp[]>(stamps?.book ?? []);
   const [stampOpen, setStampOpen] = useState(false);
-  // Only posts to Today get a stamp.
-  const stamped = Boolean(stamps) && !target;
+  // Every post gets a stamp (lessons aren't written here).
+  const stamped = Boolean(stamps);
   const stampToSend = stamped ? stamp : null;
   const stampUrls = Object.fromEntries(book.map((b) => [b.path, b.url]));
   const currentStamp = stampView(stamp, stampUrls, { mine: stamps?.city }) ?? stampView(FALLBACK_STAMP, {});

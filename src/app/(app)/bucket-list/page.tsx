@@ -2,6 +2,7 @@ import { getBucketList, getUs } from "@/lib/data";
 import { inkStyle } from "@/lib/inks";
 import { peopleOf } from "@/lib/people";
 import { BucketList } from "@/components/BucketList";
+import { Doodle } from "@/components/Doodle";
 
 export default async function BucketListPage() {
   const [us, { missing, items }] = await Promise.all([getUs(), getBucketList()]);
@@ -10,7 +11,10 @@ export default async function BucketListPage() {
   return (
     <main className="main" style={inkStyle(us.me.ink)}>
       <header className="page-head">
-        <h1 className="page-title">Bucket list</h1>
+        <h1 className="page-title">
+          <Doodle name="nav-bucket" size={40} className="title-icon" />
+          Bucket list
+        </h1>
         <p className="hint">Things to do together. Either of you can add to it and check things off, in your own ink.</p>
       </header>
       {missing ? (

@@ -16,7 +16,7 @@ type Props = {
 
 const LONG_PRESS_MS = 420;
 
-/** Hearts and emoji, each stamped in the ink of whoever left it. Never a count. */
+/** The heart (filled red when you've given one, with how many hearts it has) and emoji in whoever's ink. */
 export function ReactionBar({ target, reactions, people, readOnly }: Props) {
   const [optimistic, apply] = useOptimistic(reactions, (list: Reaction[], change: { emoji: Emoji; on: boolean }) =>
     change.on
@@ -41,8 +41,10 @@ export function ReactionBar({ target, reactions, people, readOnly }: Props) {
 
   // Show the other person's reactions first, then mine, hearts before emoji.
   const order = (r: Reaction) => (r.member_id === people.meId ? 1 : 0) * 10 + (r.emoji === "heart" ? 0 : 1);
-  const stamps = [...optimistic].sort((a, b) => order(a) - order(b)).filter((r) => !(r.member_id === people.meId && r.emoji === "heart"));
+  // Hearts are counted on the heart itself; emoji still show as stamps in whoever's ink.
+  const stamps = [...optimistic].sort((a, b) => order(a) - order(b)).filter((r) => r.emoji !== "heart");
   const hearted = mine("heart");
+  const hearts = optimistic.filter((r) => r.emoji === "heart").length;
   const me = people.byId[people.meId];
 
   return (
@@ -54,9 +56,8 @@ export function ReactionBar({ target, reactions, people, readOnly }: Props) {
       <button
         type="button"
         className={hearted ? "heart-btn on" : "heart-btn"}
-        style={me ? inkStyle(me.ink) : undefined}
         aria-pressed={hearted}
-        aria-label={hearted ? "Take back your heart" : "Heart"}
+        aria-label={`${hearted ? "Take back your heart" : "Heart"}${hearts ? ` (${hearts})` : ""}`}
         disabled={readOnly}
         onMouseEnter={() => !readOnly && window.matchMedia("(hover: hover)").matches && setTrayOpen(true)}
         onPointerDown={(e) => {
@@ -78,7 +79,8 @@ export function ReactionBar({ target, reactions, people, readOnly }: Props) {
           set("heart", !hearted);
         }}
       >
-        <Doodle name="heart" size={20} />
+        <Doodle name={hearted ? "heart-filled" : "heart"} size={20} />
+        {hearts > 0 && <span className="heart-count">{hearts}</span>}
       </button>
 
       {stamps.map((r) => {

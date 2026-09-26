@@ -115,7 +115,7 @@ export type Post = {
   reactions: Reaction[];
   latestReply: ReplyPreview | null;
   kept: boolean;
-  /** The postage stamp it was sent with. Only Today posts have one. */
+  /** The postage stamp it was sent with (lessons have none). */
   stamp?: StampView | null;
 };
 

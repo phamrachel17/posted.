@@ -67,7 +67,7 @@ export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Pro
         </Link>
         {LINKS.map((l) => (
           <Link key={l.href} href={l.href} className="nav-link" aria-current={current(l.href)}>
-            <Doodle name={l.doodle} size={22} />
+            <Doodle name={l.doodle} size={30} />
             {l.label}
           </Link>
         ))}
@@ -88,7 +88,7 @@ export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Pro
                       className={n.isNew && !here ? "nav-nb is-new" : "nav-nb"}
                       aria-current={here ? "page" : undefined}
                     >
-                      <NotebookMark doodle={n.doodle} size={26} />
+                      <NotebookMark doodle={n.doodle} size={32} />
                       <span className="nav-nb-name">{n.name}</span>
                       {n.isNew && !here && (
                         <>
@@ -126,7 +126,7 @@ export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Pro
         {LINKS.filter((l) => !l.sidebarOnly).map((l, i) => (
           <span key={l.href} className="tab-slot" style={{ order: i < 2 ? i : i + 1 }}>
             <Link href={l.href} aria-current={current(l.href)} className="tab-link">
-              <Doodle name={l.doodle} size={22} />
+              <Doodle name={l.doodle} size={26} />
               {l.label}
               {l.href === "/notebooks" && notebooks.some((n) => n.isNew) && <span className="new-dot" aria-label="New in a notebook" />}
             </Link>

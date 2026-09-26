@@ -3,6 +3,7 @@ import { AppNav } from "@/components/AppNav";
 import { BucketList } from "@/components/BucketList";
 import { inkStyle } from "@/lib/inks";
 import type { BucketItem } from "@/lib/data";
+import { Doodle } from "@/components/Doodle";
 
 // Sample bucket list for checking the design. Development only; saving won't work here.
 
@@ -32,7 +33,10 @@ export default function BucketPreview() {
       <AppNav active="/bucket-list" me={{ name: "Rachel", style: inkStyle("blue") }} partner={{ id: "arya", name: "Arya", style: inkStyle("verdigris") }} notebooks={[]} />
       <main className="main" style={inkStyle("blue")}>
         <header className="page-head">
-          <h1 className="page-title">Bucket list</h1>
+          <h1 className="page-title">
+          <Doodle name="nav-bucket" size={40} className="title-icon" />
+          Bucket list
+        </h1>
           <p className="hint">Things to do together. Either of you can add to it and check things off, in your own ink.</p>
         </header>
         <BucketList initial={items} people={people} />

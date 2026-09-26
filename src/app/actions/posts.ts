@@ -92,8 +92,8 @@ export async function createPost(input: {
     ...(audio ? [audioMedia(audio)] : []),
   ];
 
-  // Only posts to Today carry a stamp. A bad one is dropped rather than blocking the post.
-  const stamp = !input.notebookId && input.stamp ? await validStamp(input.stamp, us.space.id, us.me.city) : null;
+  // A bad stamp is dropped rather than blocking the post (it then shows your city's).
+  const stamp = input.stamp ? await validStamp(input.stamp, us.space.id, us.me.city) : null;
   const meta = {
     ...(day ?? {}),
     ...(day && input.dayDate && /^\d{4}-\d{2}-\d{2}$/.test(input.dayDate) ? { day: input.dayDate } : {}),

@@ -141,7 +141,7 @@ export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnl
         </div>
       )}
 
-      <Postmark postmark={post.postmark} isNew={isNew} big={detail} stamp={post.notebook ? null : post.stamp} />
+      <Postmark postmark={post.postmark} isNew={isNew} big={detail} stamp={post.stamp} />
     </article>
   );
 }

@@ -81,7 +81,7 @@ export default async function PreviewPage() {
         { id: "ph1", url: photo("#8C6F55", "#5E4838", "#46352A", true), width: 3024, height: 4032 },
         { id: "ph2", url: photo("#6F8FA8", "#3D5A73", "#2A3F52", true), width: 3024, height: 4032 },
       ],
-      reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
+      reactions: [{ member_id: "arya", emoji: "heart" }, { member_id: "rachel", emoji: "heart" }, { member_id: "arya", emoji: "🥹" }],
       latestReply: { id: "r1", author_id: "arya", body: "The ugliest one is the best one.", hasAudio: false },
       kept: true,
     }),

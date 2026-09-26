@@ -17,7 +17,10 @@ export default async function NotebooksPage() {
   return (
     <main className="main wide" style={inkStyle(us.me.ink)}>
       <header className="page-head">
-        <h1 className="page-title">Notebooks</h1>
+        <h1 className="page-title">
+          <Doodle name="nav-notebooks" size={40} className="title-icon" />
+          Notebooks
+        </h1>
         <p className="hint">One for each thing you share. Posts in a notebook stay in that notebook.</p>
       </header>
       <SortableShelf

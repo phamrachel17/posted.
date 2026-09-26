@@ -9,6 +9,7 @@ import { SpotifyConnect, SpotifyNotice } from "@/components/SpotifyConnect";
 import { spotifyStatus } from "@/lib/spotify-auth";
 import { cityPhoto } from "@/lib/city-photo";
 import { InviteBox, LetterForm, PasswordForm, ProfileForm, VisitForm } from "@/components/SettingsForms";
+import { Doodle } from "@/components/Doodle";
 
 async function origin() {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
@@ -35,7 +36,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
   return (
     <main className="main settings">
       <header className="page-head">
-        <h1 className="page-title">Settings</h1>
+        <h1 className="page-title">
+          <Doodle name="nav-you-two" size={40} className="title-icon" />
+          Settings
+        </h1>
       </header>
 
       <section aria-labelledby="you">

@@ -17,7 +17,8 @@ const OUTPUTS = [
   { src: "dancing_couple.PNG", name: "logo", shape: "natural", size: 900, thicken: 3 },
   { src: "dancing_couple.PNG", name: "logo-small", shape: "natural", size: 240, thicken: 10 },
   { src: "flower.PNG", name: "nav-today", shape: "square", size: 160, thicken: 0 },
-  { src: "sea_otters.PNG", name: "nav-scrapbook", shape: "square", size: 160, thicken: 110, boost: 16 },
+  { src: "house.PNG", name: "nav-scrapbook", shape: "square", size: 160, thicken: 90, boost: 14 },
+  { src: "sea_otters.PNG", name: "nav-bucket", shape: "square", size: 160, thicken: 110, boost: 16 },
   { src: "today.PNG", name: "empty-today", shape: "natural", size: 360, thicken: 0 },
   { src: "notebook.PNG", name: "nav-notebooks", shape: "square", size: 160, thicken: 14 },
   { src: "notebook.PNG", name: "empty-notebook", shape: "natural", size: 360, thicken: 0 },
@@ -37,6 +38,7 @@ const OUTPUTS = [
   { src: "sad_mood.PNG", name: "mood-down", shape: "square", size: 160, thicken: 20 },
   // Heart: reactions, the heart sticker, and the heart stamp.
   { src: "heart.PNG", name: "heart", shape: "square", size: 160, thicken: 8 },
+  { src: "heart.PNG", name: "heart-filled", shape: "square", size: 160, thicken: 8, fill: true },
   // Weather, beside each clock and on older My day cards.
   { src: "sun.PNG", name: "weather-clear", shape: "square", size: 160, thicken: 22 },
   { src: "sun.PNG", name: "weather-bright-spells", shape: "square", size: 160, thicken: 22 },
@@ -108,7 +110,7 @@ async function inkBox(file) {
   return { left, top, width: right - left + 1, height: bottom - top + 1 };
 }
 
-async function prepare({ src, name, shape, size, thicken, boost = 4 }) {
+async function prepare({ src, name, shape, size, thicken, boost = 4, fill = false }) {
   const file = `drawings/${src}`;
   const box = await inkBox(file);
   const pad = Math.round(Math.max(box.width, box.height) * PAD) + thicken;
@@ -133,6 +135,26 @@ async function prepare({ src, name, shape, size, thicken, boost = 4 }) {
   // drawings with fine lines need a stronger push (boost) or the blur just fades them.
   if (thicken > 0) {
     alpha = await sharp(alpha, raw(w, h)).blur(thicken / 2).linear(boost, 0).extractChannel(0).raw().toBuffer();
+  }
+
+  // Fill the inside of a closed outline (the heart, when it's been given): everything the
+  // outside can't reach without crossing a line becomes solid ink.
+  if (fill) {
+    const outside = new Uint8Array(w * h);
+    const stack = [];
+    for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
+    for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
+    while (stack.length) {
+      const p = stack.pop();
+      if (outside[p] || alpha[p] > 100) continue;
+      outside[p] = 1;
+      const x = p % w;
+      if (x > 0) stack.push(p - 1);
+      if (x < w - 1) stack.push(p + 1);
+      if (p >= w) stack.push(p - w);
+      if (p < w * (h - 1)) stack.push(p + w);
+    }
+    for (let i = 0; i < w * h; i++) if (!outside[i]) alpha[i] = 255;
   }
 
   const scale = size / Math.max(w, h);

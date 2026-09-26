@@ -36,7 +36,10 @@ export function TodayView({ us, posts, now, olderHref, older, startRecording, pr
       <main className="main" style={inkStyle(me.ink)}>
         <header className="day-front">
           <span className="weekday">{older ? "Earlier" : today.weekday}</span>
-          <h1 className="date">{older ? "Before this" : today.date}</h1>
+          <h1 className="date">
+            <Doodle name="nav-today" size={44} className="title-icon" />
+            {older ? "Before this" : today.date}
+          </h1>
         </header>
 
         {!older && (

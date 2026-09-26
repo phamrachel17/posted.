@@ -150,6 +150,16 @@ h3.label {
   font-size: 42px;
   letter-spacing: -0.015em;
 }
+/* Each page's own drawing beside its title, the way a notebook shows its drawing. */
+.page-title,
+.day-front .date {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.title-icon {
+  color: var(--ink);
+}
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -502,7 +512,7 @@ h3.label {
 .nav-link[aria-current="page"]::after {
   content: "";
   position: absolute;
-  left: 37px;
+  left: 45px;
   right: 0;
   bottom: 4px;
   height: 3px;
@@ -2355,12 +2365,15 @@ button.chip:hover {
   flex-wrap: wrap;
 }
 .heart-btn {
-  width: 32px;
+  --heart: #cf3345;
+  min-width: 32px;
   height: 32px;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border: 0;
-  border-radius: 50%;
+  border-radius: 16px;
   background: none;
   color: var(--ink-3);
   padding: 0;
@@ -2369,11 +2382,20 @@ button.chip:hover {
   user-select: none;
 }
 .heart-btn:hover:not(:disabled) {
-  color: var(--ink-c);
+  color: var(--heart);
 }
+/* Given: the heart fills in red. */
 .heart-btn.on {
-  color: var(--ink-c);
-  background: var(--ink-wash);
+  color: var(--heart);
+}
+.heart-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.heart-btn.on .heart-count {
+  color: var(--heart);
 }
 .heart-btn {
   transition: transform 120ms ease-out, background-color 200ms ease-out;

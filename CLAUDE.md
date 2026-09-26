@@ -7,7 +7,8 @@ behavior: https://claude.ai/artifact/6EZZham2hBEuZHFzfZ6qgo
 
 - All MVP milestones from the doc are built (Today, voice, replies/reactions, notebooks, My day,
   lesson notebooks, Kept, daily letter, export). The couple's lesson notebook is Spanish.
-- Never show counts about the other person (unread, seen, reactions). Time in cards is spoken
+- Never show counts about the other person (unread, seen). The one exception, at Rachel's request: a
+  heart shows how many hearts a post has, and fills red once you've given one. Time in cards is spoken
   ("last night"); exact times appear only in postmarks.
 - One account can be in several spaces (each exactly two people). `my_space_id()` is the space
   open right now (`active_spaces`, switched with `set_active_space`); everything else follows from it.

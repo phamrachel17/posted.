@@ -127,15 +127,24 @@ type PostRow = Omit<Post, "photos" | "audio" | "latestReply" | "kept" | "noteboo
   keeps: { member_id: string }[];
 };
 
+/**
+ * Every post has a stamp except lessons. One saved with the post wins; an older post
+ * without one gets the city stamp of wherever it was posted from (its postmark).
+ */
+function stampValue(r: Pick<PostRow, "kind" | "meta" | "postmark">): unknown {
+  if (r.kind === "lesson") return null;
+  return r.meta?.stamp ?? (r.postmark?.city ? `city:${r.postmark.city}` : null);
+}
+
 async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]> {
   const stampPaths = rows.flatMap((r) => {
-    const s = r.notebook ? null : parseStamp(r.meta?.stamp);
+    const s = parseStamp(stampValue(r));
     return s?.kind === "photo" ? [s.path] : [];
   });
   // City stamps: one photo lookup per city (cached for a month).
   const cityTz = new Map<string, string>();
   for (const r of rows) {
-    const s = r.notebook ? null : parseStamp(r.meta?.stamp);
+    const s = parseStamp(stampValue(r));
     if (s?.kind === "city" && s.city) cityTz.set(s.city, r.postmark?.tz ?? "UTC");
   }
   const [urls, cityPhotos] = await Promise.all([
@@ -152,7 +161,7 @@ async function hydratePosts(supabase: Supabase, rows: PostRow[]): Promise<Post[]
       latestReply: last ? { id: last.id, author_id: last.author_id, body: last.body, hasAudio: last.media.some((m) => m.type === "audio") } : null,
       // RLS only returns my own keeps, so any row means I kept it.
       kept: keeps.length > 0,
-      stamp: post.notebook ? null : stampView(post.meta?.stamp, urls, { photos: cityPhotos }),
+      stamp: stampView(stampValue(post), urls, { photos: cityPhotos }),
     };
   });
 }

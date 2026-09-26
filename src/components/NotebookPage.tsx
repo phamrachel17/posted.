@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archiveNotebook, createLesson, deleteNotebook } from "@/app/actions/notebooks";
-import { getFeed, getLessons, getNotebook, getNotebookNews, getUs } from "@/lib/data";
+import { getFeed, getLessons, getNotebook, getNotebookNews, getStampBook, getUs } from "@/lib/data";
+import { cityPhoto } from "@/lib/city-photo";
 import { inkStyle } from "@/lib/inks";
 import { coverColor } from "@/lib/notebooks";
 import { peopleOf } from "@/lib/people";
@@ -22,12 +23,15 @@ export async function NotebookPage({ slug, lessonN, editLesson }: { slug: string
   if (!notebook) notFound();
 
   const isLessons = notebook.kind === "lessons";
-  const [posts, lessons, news] = await Promise.all([
+  const [posts, lessons, news, stampBook, cityStampUrl] = await Promise.all([
     getFeed({ notebookId: notebook.id, kinds: isLessons ? ["note", "photo", "voice", "day"] : undefined }),
     isLessons ? getLessons(notebook.id) : Promise.resolve([]),
     getNotebookNews(),
+    getStampBook(),
+    cityPhoto(us.me.city, us.me.timezone),
   ]);
   const people = peopleOf(us);
+  const stamps = { book: stampBook, defaultStamp: us.me.stamp, people, city: { city: us.me.city, url: cityStampUrl } };
   const now = new Date();
 
   const lesson = lessonN ? lessons.find((l) => l.meta.n === lessonN) : lessons[0];
@@ -106,14 +110,14 @@ export async function NotebookPage({ slug, lessonN, editLesson }: { slug: string
               </div>
             )}
             <h2 className="section-title">Everything else</h2>
-            <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} />
+            <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} stamps={stamps} />
             <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} />
             <FeedList posts={posts} people={people} viewerTz={us.me.timezone} now={now} hideNotebook headTodayGroup />
           </div>
         </div>
       ) : (
         <>
-          <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} />
+          <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} stamps={stamps} />
             <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} />
           {posts.length === 0 ? (
             <div className="empty">

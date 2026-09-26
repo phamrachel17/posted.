@@ -14,7 +14,10 @@ export default async function KeptPage() {
   return (
     <main className="main" style={inkStyle(us.me.ink)}>
       <header className="page-head">
-        <h1 className="page-title">Kept</h1>
+        <h1 className="page-title">
+          <Doodle name="nav-kept" size={40} className="title-icon" />
+          Kept
+        </h1>
         <p className="hint">Only you can see this page.</p>
       </header>
       {kept.length === 0 ? (

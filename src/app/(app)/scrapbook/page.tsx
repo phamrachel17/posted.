@@ -14,7 +14,10 @@ export default async function ScrapbookPage() {
   return (
     <main className="main wide" style={inkStyle(us.me.ink)}>
       <header className="page-head">
-        <h1 className="page-title">Our scrapbook</h1>
+        <h1 className="page-title">
+          <Doodle name="nav-scrapbook" size={40} className="title-icon" />
+          Our scrapbook
+        </h1>
         <p className="hint">Pages you make together. Arrange photos, short videos, GIFs, stickers, and notes however you like.</p>
       </header>
 
