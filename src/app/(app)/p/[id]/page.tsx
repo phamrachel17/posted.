@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { Doodle } from "@/components/Doodle";
 import { PostBody } from "@/components/PostBody";
 import { PostCard } from "@/components/PostCard";
+import { Removable } from "@/components/Removable";
 import { PostMenu } from "@/components/PostMenu";
 import { ReactionBar } from "@/components/ReactionBar";
 import { VoicePlayer } from "@/components/VoicePlayer";
@@ -39,7 +40,8 @@ export default async function PostPage({ params }: PageProps<"/p/[id]">) {
             const who = people.byId[reply.author_id];
             const mine = reply.author_id === us.me.id;
             return (
-              <li key={reply.id} className="note" style={who ? inkStyle(who.ink) : undefined}>
+              <Removable key={reply.id} id={reply.id}>
+              <li className="note" style={who ? inkStyle(who.ink) : undefined}>
                 <div className="author-line">
                   {who && <Avatar name={who.name} ink={who.ink} url={who.avatarUrl} size={26} />}
                   <b>{who?.name ?? "Someone"}</b>
@@ -56,6 +58,7 @@ export default async function PostPage({ params }: PageProps<"/p/[id]">) {
                   {mine && <PostMenu postId={reply.id} isMine kept={false} canEdit={Boolean(reply.body)} kind="reply" />}
                 </div>
               </li>
+              </Removable>
             );
           })}
         </ol>

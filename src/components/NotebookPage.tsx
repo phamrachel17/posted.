@@ -111,14 +111,14 @@ export async function NotebookPage({ slug, lessonN, editLesson }: { slug: string
             )}
             <h2 className="section-title">Everything else</h2>
             <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} stamps={stamps} />
-            <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} />
+            <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} knownIds={posts.map((p) => p.id)} />
             <FeedList posts={posts} people={people} viewerTz={us.me.timezone} now={now} hideNotebook headTodayGroup />
           </div>
         </div>
       ) : (
         <>
           <Composer spaceId={us.space.id} notebookId={notebook.id} placeholder={`Something for ${notebook.name}…`} people={people} stamps={stamps} />
-            <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} />
+            <PendingPosts people={people} viewerTz={us.me.timezone} notebookId={notebook.id} knownIds={posts.map((p) => p.id)} />
           {posts.length === 0 ? (
             <div className="empty">
               <Doodle name="empty-notebook" size={150} height={122} />

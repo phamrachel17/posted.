@@ -131,12 +131,25 @@ export async function updateDay(postId: string, meta: DayMeta, dayDate: string):
   return {};
 }
 
-export async function updatePostBody(id: string, body: string): Promise<Result> {
+/** Edit a post's words, and take out any of its photos. */
+export async function updatePostBody(id: string, body: string, removePhotoIds: string[] = []): Promise<Result> {
   const us = await getUs();
   if (!us) return { error: "Sign in again to edit." };
   if (body.length > 10_000) return { error: "That's longer than a post can be." };
 
   const supabase = await createClient();
+  if (removePhotoIds.length) {
+    const { data: media } = await supabase.from("media").select("id, path, type").eq("post_id", id).eq("created_by", us.me.id);
+    const photos = (media ?? []).filter((m) => m.type === "photo");
+    const gone = photos.filter((m) => removePhotoIds.includes(m.id));
+    const left = (media ?? []).length - gone.length;
+    if (!body.trim() && left === 0) return { error: "That would leave the post empty. Delete the post instead." };
+    if (gone.length) {
+      const { error: delError } = await supabase.from("media").delete().in("id", gone.map((m) => m.id)).eq("created_by", us.me.id);
+      if (delError) return { error: "The photo didn't come off. Try again." };
+      await supabase.storage.from("media").remove(gone.map((m) => m.path));
+    }
+  }
   const { error } = await supabase
     .from("posts")
     .update({ body: body.trim() || null, edited_at: new Date().toISOString() })

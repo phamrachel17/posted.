@@ -67,6 +67,8 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const textRef = useRef<HTMLTextAreaElement>(null);
+  // Each photo's upload, so a post can be sent before its photos finish uploading.
+  const uploadsRef = useRef(new Map<string, Promise<NewPhoto | null>>());
   const fileRef = useRef<HTMLInputElement>(null);
 
   const target = fixedNotebook ?? (notebookId || null);
@@ -132,8 +134,11 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
       const id = crypto.randomUUID();
       setPhotos((list) => [...list, { id, file, preview: URL.createObjectURL(file), status: "uploading" }]);
       if (!preview) {
-        uploadPhoto(spaceId, file).then(
-          (photo) => update(id, { status: "ready", photo }),
+        const upload = uploadPhoto(spaceId, file).then(
+          (photo) => {
+            update(id, { status: "ready", photo });
+            return photo;
+          },
           (err: unknown) => {
             console.error("Photo failed:", err);
             const problem =
@@ -141,8 +146,10 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
                 ? { title: err.message, detail: err.detail }
                 : { title: `${file.name} didn't upload.`, detail: err instanceof Error ? err.message : undefined };
             update(id, { status: "failed", problem });
+            return null;
           },
         );
+        uploadsRef.current.set(id, upload);
       }
     }
     if (fileRef.current) fileRef.current.value = "";
@@ -154,12 +161,12 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
     if (item.photo) removeUpload(item.photo.path);
   }
 
-  const uploading = photos.some((p) => p.status === "uploading");
   const failed = photos.some((p) => p.status === "failed");
   const ready = photos.filter((p) => p.photo).map((p) => p.photo!);
   const canPost =
     !preview && !pending &&
-    (mode === "day" ? Boolean(day.mood || day.note?.trim()) && !uploading && !failed : !uploading && !failed && (body.trim() !== "" || ready.length > 0));
+    // Photos still uploading don't hold a post back; it waits for them after you press Post.
+    (mode === "day" ? Boolean(day.mood || day.note?.trim()) && !failed : !failed && (body.trim() !== "" || photos.length > 0));
 
   /** The post as it will look, to show right away while the server saves it. */
   function pendingPost(): Post | null {
@@ -177,7 +184,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
       created_at: now.toISOString(),
       edited_at: null,
       notebook: null,
-      photos: photos.filter((p) => p.photo).map((p) => ({ id: p.id, url: p.preview, width: p.photo!.width, height: p.photo!.height })),
+      photos: photos.map((p) => ({ id: p.id, url: p.preview, width: p.photo?.width ?? null, height: p.photo?.height ?? null })),
       audio: null,
       reactions: [],
       latestReply: null,
@@ -190,34 +197,59 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
     if (!canPost) return;
     setError(null);
     const pending = pendingPost();
-    const sentBody = body;
+    // What's being sent, so the composer can clear at once and come back if it fails.
+    const sent = { body, photos, day, dayDate, mode };
     if (pending) {
       window.dispatchEvent(new CustomEvent<PendingDetail>(PENDING_EVENT, { detail: { post: pending, notebookId: target } }));
-      // The text box clears right away; it comes back if the post doesn't go through.
-      if (mode !== "day") setBody("");
-    }
-    startTransition(async () => {
-      const result =
-        mode === "day"
-          ? await createPost({ body: "", notebookId: null, day: day as DayMeta, dayDate, photos: ready, stamp: stampToSend })
-          : await createPost({ body: sentBody, notebookId: target, photos: ready, stamp: stampToSend });
-      if (pending) window.dispatchEvent(new CustomEvent(PENDING_DONE_EVENT, { detail: pending.id }));
-      if (result.error) {
-        setError(result.error);
-        if (pending && mode !== "day") setBody(sentBody);
-        return;
-      }
-      photos.forEach((p) => URL.revokeObjectURL(p.preview));
       setPhotos([]);
+      setStampOpen(false);
       if (mode === "day") {
         setDay({});
         setDayDate(dayBounds(zone).today);
         setMode("write");
       } else {
         setBody("");
-        storage(draftKey, "");
       }
-      setStampOpen(false);
+    }
+    const restore = (message: string) => {
+      setError(message);
+      if (!pending) return;
+      window.dispatchEvent(new CustomEvent(PENDING_DONE_EVENT, { detail: { id: pending.id, realId: null } }));
+      setPhotos(sent.photos);
+      if (sent.mode === "day") {
+        setDay(sent.day);
+        setDayDate(sent.dayDate);
+        setMode("day");
+      } else {
+        setBody(sent.body);
+      }
+    };
+    startTransition(async () => {
+      // Photos that are still uploading finish first.
+      const uploaded = await Promise.all(sent.photos.map((p) => (p.photo ? Promise.resolve(p.photo) : (uploadsRef.current.get(p.id) ?? Promise.resolve(null)))));
+      if (uploaded.some((p) => !p)) return restore("A photo didn't upload. Remove it and try again.");
+      const ready = uploaded as NewPhoto[];
+      const result =
+        sent.mode === "day"
+          ? await createPost({ body: "", notebookId: null, day: sent.day as DayMeta, dayDate: sent.dayDate, photos: ready, stamp: stampToSend })
+          : await createPost({ body: sent.body, notebookId: target, photos: ready, stamp: stampToSend });
+      if (result.error) return restore(result.error);
+      // The copy on the wall steps aside once the real post is on the page.
+      if (pending) window.dispatchEvent(new CustomEvent(PENDING_DONE_EVENT, { detail: { id: pending.id, realId: result.id ?? null } }));
+      // Keep the local previews alive a little while, until the real photos have loaded.
+      window.setTimeout(() => sent.photos.forEach((p) => URL.revokeObjectURL(p.preview)), 60_000);
+      if (!pending) {
+        setPhotos([]);
+        if (sent.mode === "day") {
+          setDay({});
+          setDayDate(dayBounds(zone).today);
+          setMode("write");
+        } else {
+          setBody("");
+        }
+        setStampOpen(false);
+      }
+      if (sent.mode !== "day") storage(draftKey, "");
     });
   }
 
@@ -390,7 +422,7 @@ export function Composer({ spaceId, notebooks, notebookId: fixedNotebook, placeh
         </button>
         {(body.trim() || photos.length > 0) && (
           <button type="submit" className="btn btn-primary" disabled={!canPost}>
-            {pending ? "Posting…" : uploading ? "Uploading…" : "Post"}
+            {pending ? "Posting…" : "Post"}
           </button>
         )}
       </div>

@@ -3,6 +3,7 @@ import { buildFeed } from "@/lib/feed";
 import type { People } from "@/lib/people";
 import type { Post } from "@/lib/types";
 import { PostCard } from "./PostCard";
+import { Removable } from "./Removable";
 
 type Props = {
   posts: Post[];
@@ -41,8 +42,8 @@ export function FeedList({ posts, people, viewerTz, now, lastSeenAt = null, part
           );
         }
         return (
+          <Removable key={item.post.id} id={item.post.id}>
           <PostCard
-            key={item.post.id}
             post={item.post}
             people={people}
             viewerTz={viewerTz}
@@ -50,6 +51,7 @@ export function FeedList({ posts, people, viewerTz, now, lastSeenAt = null, part
             hideNotebook={hideNotebook}
             readOnly={readOnly}
           />
+          </Removable>
         );
       })}
       {olderHref && (

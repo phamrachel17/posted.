@@ -52,7 +52,7 @@ export function TodayView({ us, posts, now, olderHref, older, startRecording, pr
           />
         )}
 
-        {!older && !preview && <PendingPosts people={peopleOf(us)} viewerTz={me.timezone} />}
+        {!older && !preview && <PendingPosts people={peopleOf(us)} viewerTz={me.timezone} knownIds={posts.map((p) => p.id)} />}
 
         {posts.length === 0 && !older && (
           <div className="empty">

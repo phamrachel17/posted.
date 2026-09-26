@@ -998,8 +998,10 @@ a.space-row:hover {
     0 3px 5px -2px rgb(28 33 43 / 0.1),
     0 16px 26px -14px rgb(28 33 43 / 0.32);
 }
+/* A new post, in three beats: the card lands on the wall, the stamp is laid on its
+   corner, then the postmark comes down onto the stamp. */
 .card.is-landing {
-  animation: land 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: land 560ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 @keyframes land {
   from {
@@ -1012,7 +1014,35 @@ a.space-row:hover {
   }
 }
 .card.is-landing .postmark.is-new {
-  animation-delay: 260ms;
+  animation: none;
+  opacity: 1;
+}
+.card.is-landing .postmark-stamp {
+  animation: place-stamp 460ms cubic-bezier(0.2, 0.8, 0.3, 1) 420ms both;
+}
+@keyframes place-stamp {
+  from {
+    opacity: 0;
+    transform: translate(14px, -18px) rotate(26deg) scale(1.1);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(11deg);
+  }
+}
+.card.is-landing .postmark-ring,
+.card.is-landing .postmark > .doodle {
+  animation: thunk 480ms cubic-bezier(0.3, 1.45, 0.55, 1) 1000ms both;
+}
+@keyframes thunk {
+  from {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @media (hover: hover) and (pointer: fine) {
   /* Under a mouse a card tilts a touch, as if pinned at the top and nudged. */
@@ -1133,6 +1163,46 @@ a.space-row:hover {
   transform: rotate(-84deg);
   filter: drop-shadow(0.5px 1.5px 1px rgb(0 0 0 / 0.35));
   pointer-events: none;
+}
+/* Editing a post: its photos, each with a × to take it out. The grid above hides meanwhile. */
+.card:has(.post-edit) > .photos {
+  display: none;
+}
+.edit-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.edit-photo {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+.edit-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.edit-photo.is-out img {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+.edit-photo button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule), 0 2px 4px rgb(28 33 43 / 0.2);
+  color: var(--ink-2);
+  font-size: 13px;
+  cursor: pointer;
 }
 .photo-missing {
   aspect-ratio: 4 / 3;
@@ -3755,6 +3825,9 @@ button.chip:hover {
 @media (prefers-reduced-motion: reduce) {
   .vinyl.is-on,
   .card.is-landing,
+  .card.is-landing .postmark-stamp,
+  .card.is-landing .postmark-ring,
+  .card.is-landing .postmark > .doodle,
   .heart-btn.on .doodle {
     animation: none;
   }

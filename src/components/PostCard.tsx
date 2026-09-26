@@ -28,6 +28,8 @@ type Props = {
   readOnly?: boolean;
   /** Just sent: the card lands on the wall and the postmark stamps it. */
   landing?: boolean;
+  /** Still being saved: drawn exactly like the real card, but can't be clicked yet. */
+  sending?: boolean;
 };
 
 function LessonBody({ meta, post }: { meta: LessonMeta; post: Post }) {
@@ -46,7 +48,7 @@ function LessonBody({ meta, post }: { meta: LessonMeta; post: Post }) {
   );
 }
 
-export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnly, landing }: Props) {
+export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnly, landing, sending }: Props) {
   const author = people.byId[post.author_id];
   const isMine = post.author_id === people.meId;
   const isNew = Boolean(landing);
@@ -58,7 +60,7 @@ export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnl
   const partnerName = partnerId && !isMine ? people.byId[partnerId].name : undefined;
 
   return (
-    <article className={["card", detail && "card-detail", isNew && "is-landing"].filter(Boolean).join(" ")} style={author ? inkStyle(author.ink) : undefined}>
+    <article className={["card", detail && "card-detail", isNew && "is-landing"].filter(Boolean).join(" ")} style={author ? inkStyle(author.ink) : undefined} inert={sending} data-post-id={post.id}>
       <header className="author-line">
         {author && <Avatar name={author.name} ink={author.ink} url={author.avatarUrl} size={30} />}
         <b>{author?.name ?? "Someone"}</b>
@@ -99,7 +101,7 @@ export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnl
         </div>
       )}
 
-      {post.kind !== "day" && post.kind !== "lesson" && <PostBody postId={post.id} body={post.body} />}
+      {post.kind !== "day" && post.kind !== "lesson" && <PostBody postId={post.id} body={post.body} photos={post.photos} />}
 
       {post.audio && (
         <VoicePlayer id={post.audio.id} url={post.audio.url} durationMs={post.audio.duration_ms} peaks={post.audio.peaks} />

@@ -85,11 +85,37 @@ type MediaRow = {
 const MEDIA_COLUMNS = "id, type, path, mime, width, height, duration_ms, peaks, position";
 const SIGNED_URL_SECONDS = 60 * 60 * 6;
 
+// Signed links are reused while they have over an hour left. A fresh link has a new
+// token, so without this every refresh would make the browser load every photo again
+// and the whole feed would flash. Only paths a person's own (RLS-checked) query
+// returned are ever signed or looked up here.
+const signedCache = new Map<string, { url: string; until: number }>();
+const REUSE_MS = 60 * 60 * 1000;
+
 async function signPaths(supabase: Supabase, paths: string[]) {
   const urls = new Map<string, string>();
   if (!paths.length) return urls;
-  const { data } = await supabase.storage.from("media").createSignedUrls(paths, SIGNED_URL_SECONDS);
-  data?.forEach((s) => s.path && s.signedUrl && urls.set(s.path, s.signedUrl));
+  const now = Date.now();
+  const missing: string[] = [];
+  for (const p of new Set(paths)) {
+    const hit = signedCache.get(p);
+    if (hit && hit.until - now > REUSE_MS) urls.set(p, hit.url);
+    else missing.push(p);
+  }
+  if (missing.length) {
+    const { data } = await supabase.storage.from("media").createSignedUrls(missing, SIGNED_URL_SECONDS);
+    const until = now + SIGNED_URL_SECONDS * 1000;
+    data?.forEach((s) => {
+      if (!s.path || !s.signedUrl) return;
+      urls.set(s.path, s.signedUrl);
+      signedCache.set(s.path, { url: s.signedUrl, until });
+    });
+    // Keep the cache from growing without bound on a long-lived server.
+    if (signedCache.size > 5000) {
+      for (const [k, v] of signedCache) if (v.until - now <= REUSE_MS) signedCache.delete(k);
+      if (signedCache.size > 5000) signedCache.clear();
+    }
+  }
   return urls;
 }
 

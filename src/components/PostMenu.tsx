@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { deletePost, deleteReply, setKept } from "@/app/actions/posts";
+import { markRemoved } from "@/lib/removed";
 import { Doodle } from "./Doodle";
 
 export const EDIT_EVENT = "posted:edit";
@@ -60,9 +61,10 @@ export function PostMenu({ postId, isMine, kept, canEdit, leaveOnDelete, kind = 
                 // Take it off the page now; the server catches up behind it.
                 if (leaveOnDelete) return;
                 const item = e.currentTarget.closest<HTMLElement>(isReply ? "li.note, .reply-preview" : "article.card");
-                if (!item) return;
+                if (!item) return markRemoved(postId);
                 item.setAttribute("data-removing", "");
-                window.setTimeout(() => (item.hidden = true), 240);
+                // After the fade, the page itself forgets it, so no refresh can bring it back.
+                window.setTimeout(() => markRemoved(postId), 240);
               }}
             >
               <input type="hidden" name="id" value={postId} />
