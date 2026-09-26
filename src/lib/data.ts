@@ -478,12 +478,19 @@ export async function getJukebox(): Promise<{ missing: boolean; current: Song | 
   const query = (columns: string) =>
     supabase.from("jukebox_songs").select(columns).order("created_at", { ascending: false }).limit(6);
 
-  let { data, error } = await query(`${SONG_COLUMNS}, preview`);
-  // Before the preview migration runs, load songs without it.
+  // Before the later migrations run, load songs without their newer columns.
+  let { data, error } = await query(`${SONG_COLUMNS}, preview, taken_off_at`);
+  if (error && /taken_off_at/.test(error.message)) ({ data, error } = await query(`${SONG_COLUMNS}, preview`));
   if (error && /preview/.test(error.message)) ({ data, error } = await query(SONG_COLUMNS));
   if (error) return { missing: true, current: null, earlier: [] };
 
-  const songs = (data as unknown as Song[]).map((s) => ({ ...s, preview: s.preview ?? null }));
+  const rows = data as unknown as (Song & { taken_off_at?: string | null })[];
+  const songs: Song[] = rows.map((s) => ({
+    id: s.id, kind: s.kind, spotify_id: s.spotify_id, title: s.title, artist: s.artist,
+    image: s.image, set_by: s.set_by, created_at: s.created_at, preview: s.preview ?? null,
+  }));
+  // The last song was taken off: the record player is empty, and that song joins the earlier ones.
+  if (rows[0]?.taken_off_at) return { missing: false, current: null, earlier: songs.slice(0, 5) };
   const current = songs[0] ?? null;
   // Songs put on before previews were saved: look the preview up now.
   if (current && !current.preview && current.kind === "track") {

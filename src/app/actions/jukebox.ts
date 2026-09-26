@@ -33,3 +33,19 @@ export async function putOnSong(link: string): Promise<{ error?: string }> {
   revalidatePath("/");
   return {};
 }
+
+/** Takes the song off the record player, leaving it empty until someone puts another on. */
+export async function takeOffSong(id: string): Promise<{ error?: string }> {
+  const us = await getUs();
+  if (!us) return { error: "Sign in again." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("jukebox_songs")
+    .update({ taken_off_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("taken_off_at", null)
+    .select("id");
+  if (error || !data?.length) return { error: "The song didn't come off. Try again." };
+  revalidatePath("/");
+  return {};
+}

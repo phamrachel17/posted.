@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { putOnSong } from "@/app/actions/jukebox";
+import { putOnSong, takeOffSong } from "@/app/actions/jukebox";
 import type { Song } from "@/lib/data";
 import { useSpotifyEmbed } from "@/lib/spotify-embed";
 import { useSpotifyPlayer } from "@/lib/spotify-player";
@@ -85,7 +85,8 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
     const supabase = createClient();
     const channel = supabase
       .channel(`jukebox:${spaceId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jukebox_songs", filter: `space_id=eq.${spaceId}` }, () => {
+      // A new song, or the song taken off (an update).
+      .on("postgres_changes", { event: "*", schema: "public", table: "jukebox_songs", filter: `space_id=eq.${spaceId}` }, () => {
         audioRef.current?.pause();
         embedPause();
         fullReset();
@@ -186,7 +187,7 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
               )}
             </>
           ) : (
-            <span className="jukebox-who">Nothing on yet. Put on a song for the other person to find.</span>
+            <span className="jukebox-who">Nothing on. Put on a song for the other person to find.</span>
           )}
         </div>
       </div>
@@ -292,9 +293,30 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
           <span className="hint">In Spotify: Share → Copy link.</span>
         </form>
       ) : (
-        <button type="button" className="text-link" onClick={() => setChanging(true)}>
-          {current ? "Change the song" : "Put a song on"}
-        </button>
+        <div className="jukebox-links">
+          <button type="button" className="text-link" onClick={() => setChanging(true)}>
+            {current ? "Change the song" : "Put a song on"}
+          </button>
+          {current && (
+            <button
+              type="button"
+              className="text-link"
+              disabled={pending}
+              onClick={() => {
+                audioRef.current?.pause();
+                embedPause();
+                fullPause();
+                if (preview) return;
+                startTransition(async () => {
+                  const r = await takeOffSong(current.id);
+                  setError(r.error ?? null);
+                });
+              }}
+            >
+              {pending ? "Taking it off…" : "Take it off"}
+            </button>
+          )}
+        </div>
       )}
       {error && <p className="error-note"><b>{error}</b></p>}
 
