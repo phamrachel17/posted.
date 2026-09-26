@@ -17,7 +17,7 @@ const OUTPUTS = [
   { src: "dancing_couple.PNG", name: "logo", shape: "natural", size: 900, thicken: 3 },
   { src: "dancing_couple.PNG", name: "logo-small", shape: "natural", size: 240, thicken: 10 },
   { src: "flower.PNG", name: "nav-today", shape: "square", size: 160, thicken: 0 },
-  { src: "house.PNG", name: "nav-scrapbook", shape: "square", size: 160, thicken: 90, boost: 14 },
+  { src: "house.PNG", name: "nav-scrapbook", shape: "square", size: 160, thicken: 60, boost: 7 },
   { src: "sea_otters.PNG", name: "nav-bucket", shape: "square", size: 160, thicken: 110, boost: 16 },
   { src: "today.PNG", name: "empty-today", shape: "natural", size: 360, thicken: 0 },
   { src: "notebook.PNG", name: "nav-notebooks", shape: "square", size: 160, thicken: 14 },
