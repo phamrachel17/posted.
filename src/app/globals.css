@@ -7,11 +7,11 @@
   --ink-2: #535a67;
   --ink-3: #6f7580;
   --rule: #d2d5cb;
-  /* The accent is dark red: --stamp for text and fine lines, --accent-fill for
+  /* The accent is leaf green: --stamp for text and fine lines, --accent-fill for
      bars and dots, --stamp-wash for highlighted backgrounds. */
-  --accent-fill: #a32a36;
-  --stamp: #8b1e2b;
-  --stamp-wash: #f5e0e1;
+  --accent-fill: #4f7d3a;
+  --stamp: #3d6a2c;
+  --stamp-wash: #e3eed9;
   --warn: #9a4a1f;
   --warn-wash: #f5e7dd;
 
@@ -604,13 +604,13 @@ h3.label {
 }
 /* A notebook with something new from the other person lights up until opened. */
 .nav-nb.is-new {
-  color: var(--stamp);
+  color: var(--ink-c);
   font-weight: 600;
-  background: var(--stamp-wash);
+  background: color-mix(in srgb, var(--ink-c) 13%, var(--card));
 }
 .nav-nb.is-new:hover,
 .nav-nb.is-new .doodle {
-  color: var(--stamp);
+  color: var(--ink-c);
 }
 .nav-nb-name {
   flex: 1;
@@ -650,7 +650,7 @@ h3.label {
   height: 9px;
   margin-right: 4px;
   border-radius: 50%;
-  background: var(--stamp);
+  background: var(--ink-c);
   box-shadow: 0 0 0 3px var(--card);
 }
 .new-dot {
@@ -1345,7 +1345,8 @@ a.space-row:hover {
   display: flex;
   align-items: center;
   transform: rotate(-9deg);
-  color: var(--stamp);
+  /* Postmarked in the ink of whoever posted it. */
+  color: var(--ink-c);
   opacity: 0.88;
   pointer-events: none;
 }
@@ -3559,41 +3560,41 @@ button.chip:hover {
   flex-direction: column;
   gap: 16px;
 }
-.jukebox-top {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.vinyl {
-  position: relative;
-  flex: none;
-  width: 88px;
-  height: 88px;
-  border: 0;
-  padding: 0;
-  border-radius: 50%;
+/* The record player small on the left, what's on beside it. */
+.jukebox-side {
   display: grid;
-  place-items: center;
-  background:
-    repeating-radial-gradient(circle at center, #161616 0 1.2px, #232323 1.6px 3px);
-  box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.55), inset 0 0 0 2px #0e0e0e;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+/* ---------- The suitcase record player ---------- */
+.suitcase {
+  position: relative;
+  width: 100%;
+  max-width: 260px;
+  margin-inline: auto;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.vinyl::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(from 20deg, transparent 0 8%, rgba(255, 255, 255, 0.1) 13%, transparent 20% 55%, rgba(255, 255, 255, 0.08) 62%, transparent 70%);
-  pointer-events: none;
+.suitcase svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
-/* The record turns only while music plays, and stops where it is when paused. */
-.vinyl.is-on {
-  animation: spin 2.4s linear infinite;
+.suitcase:focus-visible {
+  outline: 2px dashed var(--stamp);
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+/* The record turns while music plays, and stops where it is when paused. */
+.suitcase-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spin 2.2s linear infinite;
   animation-play-state: paused;
 }
-.vinyl.is-playing {
+.suitcase.is-playing .suitcase-spin {
   animation-play-state: running;
 }
 @keyframes spin {
@@ -3601,68 +3602,89 @@ button.chip:hover {
     transform: rotate(360deg);
   }
 }
-.vinyl-label {
-  width: 42%;
-  height: 42%;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--accent-fill);
-  box-shadow: 0 0 0 2px #0e0e0e;
+/* A new record slides on. */
+.suitcase-record.is-new {
+  animation: record-on 600ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
-.vinyl-label img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+@keyframes record-on {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
 }
-.vinyl-blank {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, var(--stamp-wash) 0 30%, var(--accent-fill) 31%);
+/* The arm swings on and settles, then creeps inward with the song. */
+.suitcase-arm {
+  transform-box: view-box;
+  transform-origin: 443px 376px;
+  transition: transform 0.75s cubic-bezier(0.35, 1.25, 0.5, 1);
 }
-.vinyl-hole {
+.suitcase.is-playing .suitcase-arm {
+  transition: transform 1s linear;
+}
+/* The two of you on the record's center, turning with it like a music-box figurine. */
+.suitcase-couple {
   position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--paper);
-  z-index: 1;
-}
-/* A little tonearm resting on the record. */
-.jukebox-top::before {
-  content: "";
-  position: absolute;
-  left: 76px;
-  top: -4px;
-  width: 3px;
-  height: 34px;
-  border-radius: 2px;
-  background: linear-gradient(#b9b9b0, #8d8d86);
-  /* At rest the arm sits just off the record; Play swings it on, settling like a real arm. */
-  transform: rotate(-6deg);
-  transform-origin: top center;
-  transition: transform 650ms cubic-bezier(0.3, 1.25, 0.5, 1);
-  z-index: 1;
-  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  left: 22.8%;
+  width: 36%;
+  top: 42.5%;
+  perspective: 420px;
   pointer-events: none;
 }
-.jukebox-top.is-playing::before {
-  transform: rotate(30deg);
-  transition-duration: 550ms;
+.suitcase-couple img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: couple-turn 4.4s linear infinite;
+  animation-play-state: paused;
+  filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.18));
 }
-.jukebox-top::after {
-  content: "";
-  position: absolute;
-  left: 71px;
-  top: -8px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #a9a9a1;
-  box-shadow: inset 0 0 0 3px #d9d9d2;
-  z-index: 1;
-  pointer-events: none;
+.suitcase.is-playing .suitcase-couple img {
+  animation-play-state: running;
+}
+@keyframes couple-turn {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+.suitcase-note {
+  opacity: 0;
+}
+.suitcase.is-playing .suitcase-note {
+  animation: drift 3.4s ease-out infinite;
+}
+.suitcase.is-playing .suitcase-note:nth-of-type(2) {
+  animation-delay: 0.9s;
+}
+.suitcase.is-playing .suitcase-note:nth-of-type(3) {
+  animation-delay: 1.8s;
+}
+.suitcase.is-playing .suitcase-note:nth-of-type(4) {
+  animation-delay: 2.6s;
+}
+@keyframes drift {
+  0% {
+    opacity: 0;
+    transform: translate(0, 30px) scale(0.8);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-18px, -100px) scale(1.05);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .suitcase-spin,
+  .suitcase-couple img,
+  .suitcase.is-playing .suitcase-note,
+  .suitcase-record {
+    animation: none;
+  }
+  .suitcase-arm {
+    transition: none;
+  }
 }
 .jukebox-now {
   display: flex;
@@ -3692,10 +3714,30 @@ button.chip:hover {
   font-size: 13.5px;
   color: var(--ink-2);
 }
-.jukebox-controls {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+.jukebox-who {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+.jukebox-play {
+  justify-self: start;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 0 0 1px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.jukebox-play:hover {
+  border-bottom-color: currentColor;
+}
+.jukebox-play:disabled {
+  color: var(--ink-3);
+  cursor: default;
 }
 .jukebox-embed {
   max-height: 0;
@@ -3735,25 +3777,6 @@ button.chip:hover {
   height: 100%;
   background: var(--accent-fill);
   transition: width 250ms linear;
-}
-/* A hand-drawn record replaces the grooves drawn in code. */
-.vinyl.is-drawn {
-  background: none;
-  box-shadow: none;
-}
-.vinyl.is-drawn::after {
-  display: none;
-}
-.vinyl-drawing {
-  position: absolute;
-  inset: 0;
-  background-color: #1c1c1c;
-  -webkit-mask: var(--doodle) center / contain no-repeat;
-  mask: var(--doodle) center / contain no-repeat;
-}
-.vinyl.is-drawn .vinyl-label {
-  position: relative;
-  z-index: 1;
 }
 .jukebox-change {
   display: flex;
@@ -3823,7 +3846,6 @@ button.chip:hover {
   text-decoration: underline;
 }
 @media (prefers-reduced-motion: reduce) {
-  .vinyl.is-on,
   .card.is-landing,
   .card.is-landing .postmark-stamp,
   .card.is-landing .postmark-ring,
@@ -3832,8 +3854,7 @@ button.chip:hover {
     animation: none;
   }
   .card,
-  .heart-btn,
-  .jukebox-top::before {
+  .heart-btn {
     transition: none;
   }
   .card:hover {

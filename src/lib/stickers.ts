@@ -10,7 +10,7 @@ export const STICKER_GROUPS: { title: string; stickers: Sticker[] }[] = [
   {
     title: "Doodles",
     stickers: [
-      { name: "logo", label: "Us, dancing", aspect: 900 / 689 },
+      { name: "logo", label: "Us, dancing", aspect: 900 / 687 },
       { name: "stars", label: "Tied stars", aspect: 325 / 360 },
       { name: "empty-today", label: "Tulip", aspect: 302 / 360 },
       { name: "kept", label: "Pushpin", aspect: 1 },

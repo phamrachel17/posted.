@@ -1,15 +1,13 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- album art from Spotify's image CDN */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { putOnSong } from "@/app/actions/jukebox";
 import type { Song } from "@/lib/data";
-import { DRAWN } from "@/lib/drawn";
 import { useSpotifyEmbed } from "@/lib/spotify-embed";
 import { useSpotifyPlayer } from "@/lib/spotify-player";
 import { createClient } from "@/lib/supabase/client";
-import { doodleUrl } from "./Doodle";
+import { SuitcasePlayer } from "./SuitcasePlayer";
 
 type Props = {
   current: Song | null;
@@ -45,8 +43,6 @@ function openInSpotify(s: Pick<Song, "kind" | "spotify_id">) {
   }, 1500);
 }
 
-// A hand-drawn record (drawings/record.PNG → "record") replaces the drawn-in-code one.
-const DRAWN_RECORD = DRAWN.has("record");
 
 /**
  * A record player shared by the two of you. Whatever was put on last stays on
@@ -160,23 +156,19 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
   }, [embedPause, fullPause]);
 
   const who = current ? (current.set_by === meId ? "You" : (names[current.set_by] ?? "Someone")) : null;
-  const classes = ["vinyl", current && "is-on", playing && "is-playing", DRAWN_RECORD && "is-drawn"].filter(Boolean).join(" ");
 
   return (
     <div className="jukebox">
-      <div className={playing ? "jukebox-top is-playing" : "jukebox-top"}>
-        <button
-          type="button"
-          className={classes}
-          aria-label={!current ? "Put a song on" : playing ? "Pause" : useFull || useEmbed || current.preview ? `Play ${current.title}` : `Open ${current.title} in Spotify`}
-          onClick={togglePlay}
-        >
-          {DRAWN_RECORD && <span className="vinyl-drawing" style={{ "--doodle": `url(${doodleUrl("record")})` } as React.CSSProperties} aria-hidden />}
-          <span className="vinyl-label">
-            {current?.image ? <img src={current.image} alt="" /> : <span className="vinyl-blank" />}
-          </span>
-          <span className="vinyl-hole" aria-hidden />
-        </button>
+      {/* A small record player with what's on beside it. */}
+      <div className="jukebox-side">
+        <SuitcasePlayer
+          playing={playing}
+          progress={progress}
+          image={current?.image ?? null}
+          songKey={current?.id ?? null}
+          label={!current ? "Put a song on" : playing ? "Pause" : useFull || useEmbed || current.preview ? `Play ${current.title}` : `Open ${current.title} in Spotify`}
+          onToggle={togglePlay}
+        />
         <div className="jukebox-now">
           {current ? (
             <>
@@ -184,23 +176,20 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
                 {current.title}
               </button>
               {current.artist && <span className="jukebox-artist">{current.artist}</span>}
-              <span className="hint">
+              <span className="jukebox-who">
                 {who} put this on{when ? ` · ${when}` : ""}
               </span>
+              {(useFull || useEmbed || fullPending || current.preview) && (
+                <button type="button" className="jukebox-play" onClick={togglePlay} disabled={fullPending}>
+                  {fullPending ? "Connecting to Spotify…" : playing ? "❚❚ Pause" : useFull || useEmbed ? "▶ Play" : "▶ Play preview"}
+                </button>
+              )}
             </>
           ) : (
-            <span className="hint">Nothing on yet. Put on a song for the other person to find.</span>
+            <span className="jukebox-who">Nothing on yet. Put on a song for the other person to find.</span>
           )}
         </div>
       </div>
-
-      {current && (useFull || useEmbed || fullPending || current.preview) && (
-        <div className="jukebox-controls">
-          <button type="button" className="b-tool" onClick={togglePlay} disabled={fullPending}>
-            {fullPending ? "Connecting to Spotify…" : playing ? "❚❚ Pause" : useFull || useEmbed ? "▶ Play" : "▶ Play preview"}
-          </button>
-        </div>
-      )}
       {useFull && fullState.movedTo && !playing && (
         <p className="hint jukebox-note">
           Spotify moved the song to {fullState.movedTo}. Press Play to bring it back here. If this keeps happening, quit the
@@ -208,11 +197,6 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
         </p>
       )}
 
-      {useFull && current && (playing || progress > 0) && (
-        <div className="jukebox-progress" aria-hidden>
-          <i style={{ width: `${progress * 100}%` }} />
-        </div>
-      )}
 
       {!preview && spotify?.configured && !spotify.connected && (
         <span className="hint jukebox-connect">
@@ -263,11 +247,6 @@ export function Jukebox({ current, earlier, names, meId, spaceId, when, preview,
         </div>
       )}
 
-      {!useFull && !useEmbed && current?.preview && (playing || progress > 0) && (
-        <div className="jukebox-progress" aria-hidden>
-          <i style={{ width: `${progress * 100}%` }} />
-        </div>
-      )}
       {current?.preview && (
         <audio
           ref={audioRef}

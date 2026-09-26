@@ -87,6 +87,8 @@ export function AppNav({ me, partner, active, notebooks = [], spaces = [] }: Pro
                       href={href}
                       className={n.isNew && !here ? "nav-nb is-new" : "nav-nb"}
                       aria-current={here ? "page" : undefined}
+                      // Lit in the ink of whoever changed it: the other person.
+                      style={n.isNew && !here ? partner?.style : undefined}
                     >
                       <NotebookMark doodle={n.doodle} size={32} />
                       <span className="nav-nb-name">{n.name}</span>
