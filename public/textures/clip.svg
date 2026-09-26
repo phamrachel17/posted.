@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 96" width="32" height="96">
+  <defs>
+    <!-- Polished steel: bright down the middle of the wire, darker at its edges. -->
+    <linearGradient id="steel" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="32" y2="6">
+      <stop offset="0" stop-color="#8e949b"/>
+      <stop offset="0.22" stop-color="#e9ecef"/>
+      <stop offset="0.38" stop-color="#b3b8be"/>
+      <stop offset="0.55" stop-color="#f8f9fa"/>
+      <stop offset="0.72" stop-color="#aeb3b9"/>
+      <stop offset="0.88" stop-color="#e2e5e8"/>
+      <stop offset="1" stop-color="#8a9097"/>
+    </linearGradient>
+  </defs>
+  <!-- The wire: one smooth loop inside another, like a standard paper clip. -->
+  <path d="M12 74V24a5 5 0 0 1 10 0v55a9 9 0 0 1-18 0V13a12 12 0 0 1 24 0v52"
+        fill="none" stroke="#6f757c" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+  <path d="M12 74V24a5 5 0 0 1 10 0v55a9 9 0 0 1-18 0V13a12 12 0 0 1 24 0v52"
+        fill="none" stroke="url(#steel)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- A thin highlight where the light catches the wire. -->
+  <path d="M12 74V24a5 5 0 0 1 10 0v55a9 9 0 0 1-18 0V13a12 12 0 0 1 24 0v52"
+        fill="none" stroke="#ffffff" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.75" transform="translate(-0.45 -0.35)"/>
+</svg>

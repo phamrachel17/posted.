@@ -1101,6 +1101,29 @@ a.space-row:hover {
   height: auto;
   max-height: 380px;
 }
+/* A real paper clip gripping the left side of a postcard's photos: it lies across the
+   photo's left edge, a little way down, and sticks out into the card's margin. */
+.photos.is-clipped {
+  position: relative;
+}
+.photos.is-clipped img.photo-clip {
+  position: absolute;
+  z-index: 2;
+  /* The clip image stands upright; turned on its side, its middle sits on the photo's edge. */
+  left: -1px;
+  top: 2px;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  height: 86px;
+  aspect-ratio: auto;
+  object-fit: contain;
+  background: none;
+  border-radius: 0;
+  transform: rotate(-84deg);
+  filter: drop-shadow(0.5px 1.5px 1px rgb(0 0 0 / 0.35));
+  pointer-events: none;
+}
 .photo-missing {
   aspect-ratio: 4 / 3;
   border-radius: 3px;
@@ -2824,6 +2847,17 @@ button.chip:hover {
 }
 .sheet-head h2 {
   font-size: 30px;
+}
+.lesson-delete {
+  margin-right: auto;
+  color: var(--warn);
+}
+.lesson-delete-confirm {
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
 }
 .sheet-head-side {
   display: flex;

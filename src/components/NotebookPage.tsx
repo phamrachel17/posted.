@@ -16,7 +16,7 @@ import { NotebookDialog } from "./NotebookDialog";
 import { NotebookMark } from "./NotebookMark";
 import { PendingPosts } from "./PendingPosts";
 
-export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: number }) {
+export async function NotebookPage({ slug, lessonN, editLesson }: { slug: string; lessonN?: number; editLesson?: boolean }) {
   const [us, notebook] = await Promise.all([getUs(), getNotebook(decodeURIComponent(slug))]);
   if (!us) return null;
   if (!notebook) notFound();
@@ -84,7 +84,7 @@ export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: 
                 aria-current={l.id === lesson?.id ? "page" : undefined}
               >
                 <span>Lesson {l.meta.n}</span>
-                <span className="hint">{longDate(l.meta.date).replace(/^\w+, /, "")}</span>
+                <span className="hint">{l.meta.date ? longDate(l.meta.date).replace(/^\w+, /, "") : "No date"}</span>
               </Link>
             ))}
           </nav>
@@ -95,13 +95,14 @@ export async function NotebookPage({ slug, lessonN }: { slug: string; lessonN?: 
                 postId={lesson.id}
                 meta={lesson.meta as LessonMeta}
                 people={people}
-                deleteFrom={lesson.author_id === us.me.id ? notebook.slug : undefined}
+                deleteFrom={notebook.slug}
+                startEditing={editLesson}
               />
             ) : (
               <div className="empty">
                 <Doodle name="empty-lessons" size={170} height={151} />
                 <b>No lessons yet</b>
-                <p>Start one on Sunday. It&rsquo;s numbered and dated for you, and questions from the week carry over.</p>
+                <p>Start one whenever you have a lesson. It&rsquo;s numbered for you, you pick the day, and questions from last time carry over.</p>
               </div>
             )}
             <h2 className="section-title">Everything else</h2>

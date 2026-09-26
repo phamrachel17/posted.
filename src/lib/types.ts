@@ -88,7 +88,8 @@ export type Question = { text: string; by: string; answered?: boolean };
 export type LessonMeta = {
   n: number;
   /** "YYYY-MM-DD" */
-  date: string;
+  /** "YYYY-MM-DD", or null until you pick the day. */
+  date: string | null;
   teacher_id?: string | null;
   topics: string[];
   vocab: VocabRow[];

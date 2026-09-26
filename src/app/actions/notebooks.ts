@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLessons, getUs } from "@/lib/data";
 import { COVERS, slugify } from "@/lib/notebooks";
-import { dayKey } from "@/lib/time";
 import type { FormState } from "@/lib/forms";
 import type { LessonMeta } from "@/lib/types";
 
@@ -96,15 +95,6 @@ export async function deleteNotebook(formData: FormData) {
 // Lessons
 // ---------------------------------------------------------------------------
 
-/** The coming Sunday (or today, if it's Sunday) in a time zone. */
-function nextSunday(timeZone: string) {
-  const today = dayKey(new Date(), timeZone);
-  const [y, m, d] = today.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  date.setUTCDate(date.getUTCDate() + ((7 - date.getUTCDay()) % 7));
-  return date.toISOString().slice(0, 10);
-}
-
 export async function createLesson(formData: FormData) {
   const us = await getUs();
   if (!us) return;
@@ -117,7 +107,8 @@ export async function createLesson(formData: FormData) {
 
   const meta: LessonMeta = {
     n: (previous?.meta.n ?? 0) + 1,
-    date: nextSunday(us.me.timezone),
+    // No day until you pick one.
+    date: null,
     teacher_id: previous?.meta.teacher_id ?? us.me.id,
     topics: [],
     vocab: [],
@@ -143,10 +134,11 @@ export async function createLesson(formData: FormData) {
     });
   }
   revalidatePath("/", "layout");
-  redirect(`/n/${slug}/lessons/${meta.n}`);
+  // Straight into filling it in.
+  redirect(`/n/${slug}/lessons/${meta.n}?edit=1`);
 }
 
-/** Delete a lesson you created. Its unanswered questions move to the newest lesson left, so they aren't lost. */
+/** Delete a lesson (either of you can). Its unanswered questions move to the newest lesson left, so they aren't lost. */
 export async function deleteLesson(formData: FormData) {
   const us = await getUs();
   if (!us) return;
@@ -159,12 +151,12 @@ export async function deleteLesson(formData: FormData) {
     .select("id, notebook_id, meta")
     .eq("id", id)
     .eq("kind", "lesson")
-    .eq("author_id", us.me.id)
     .is("deleted_at", null)
     .maybeSingle();
   if (!lesson?.notebook_id) return;
 
-  const { error } = await supabase.from("posts").update({ deleted_at: new Date().toISOString() }).eq("id", id).eq("author_id", us.me.id);
+  // Either of you can delete a lesson; they're shared.
+  const { error } = await supabase.rpc("delete_lesson", { p_post_id: id });
   if (error) return;
 
   const open = ((lesson.meta as LessonMeta).questions ?? []).filter((q) => !q.answered);
@@ -188,7 +180,7 @@ export async function saveLesson(postId: string, meta: LessonMeta): Promise<{ er
 
   const clean: LessonMeta = {
     n: Math.max(1, Math.round(Number(meta.n) || 1)),
-    date: /^\d{4}-\d{2}-\d{2}$/.test(meta.date) ? meta.date : nextSunday(us.me.timezone),
+    date: meta.date && /^\d{4}-\d{2}-\d{2}$/.test(meta.date) ? meta.date : null,
     teacher_id: meta.teacher_id && memberIds.has(meta.teacher_id) ? meta.teacher_id : null,
     topics: (meta.topics ?? []).map((t) => str(t, 60)).filter(Boolean).slice(0, 20),
     vocab: (meta.vocab ?? [])

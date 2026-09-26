@@ -35,7 +35,7 @@ function LessonBody({ meta, post }: { meta: LessonMeta; post: Post }) {
   return (
     <Link href={href} className="lesson-summary">
       <span className="label">Lesson {meta.n}</span>
-      <b>{longDate(meta.date)}</b>
+      <b>{meta.date ? longDate(meta.date) : "No date yet"}</b>
       {meta.topics?.length > 0 && (
         <span className="chips">{meta.topics.map((t) => <span key={t} className="chip">{t}</span>)}</span>
       )}
@@ -84,7 +84,9 @@ export function PostCard({ post, people, viewerTz, hideNotebook, detail, readOnl
       {post.kind === "lesson" && <LessonBody meta={post.meta as unknown as LessonMeta} post={post} />}
 
       {n > 0 && (
-        <div className={`photos n${Math.min(n, 6)}`}>
+        <div className={`photos n${Math.min(n, 6)}${post.notebook ? "" : " is-clipped"}`}>
+          {/* A postcard's photos are held on with a paper clip. */}
+          {!post.notebook && <img className="photo-clip" src="/textures/clip.svg" alt="" aria-hidden width={32} height={96} />}
           {post.photos.map((photo) =>
             photo.url ? (
               <a key={photo.id} href={photo.url} target="_blank" rel="noreferrer">

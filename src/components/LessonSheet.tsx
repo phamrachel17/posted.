@@ -13,17 +13,20 @@ type Props = {
   meta: LessonMeta;
   people: People;
   readOnly?: boolean;
-  /** Set when you created this lesson, so you can delete it. */
+  /** The notebook's slug, so deleting can go back to it. */
   deleteFrom?: string;
+  /** Open straight into editing (a lesson that was just started). */
+  startEditing?: boolean;
 };
 
 /**
  * A lesson page both people can fill in. Checking homework and adding
  * questions save right away; everything else is under Edit.
  */
-export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFrom }: Props) {
+export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFrom, startEditing }: Props) {
   const [meta, setMeta] = useState<LessonMeta>(initial);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(Boolean(startEditing) && !readOnly);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -54,7 +57,7 @@ export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFro
         <div className="sheet-head">
           <div className="field">
             <label className="label" htmlFor="lesson-date">Lesson {meta.n} date</label>
-            <input id="lesson-date" type="date" value={meta.date} onChange={(e) => set({ date: e.target.value })} required />
+            <input id="lesson-date" type="date" value={meta.date ?? ""} onChange={(e) => set({ date: e.target.value || null })} />
           </div>
           <div className="field">
             <label className="label" htmlFor="lesson-teacher">Taught by</label>
@@ -124,6 +127,29 @@ export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFro
         </div>
 
         <div className="dialog-actions">
+          {deleteFrom &&
+            (confirmDelete ? (
+              <span className="lesson-delete-confirm">
+                <span>Delete Lesson {meta.n}?</span>
+                <button type="button" className="btn btn-quiet" onClick={() => setConfirmDelete(false)}>Keep it</button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => {
+                    const fd = new FormData();
+                    fd.set("id", postId);
+                    fd.set("slug", deleteFrom);
+                    startTransition(() => deleteLesson(fd));
+                  }}
+                >
+                  Delete
+                </button>
+              </span>
+            ) : (
+              <button type="button" className="btn btn-quiet danger lesson-delete" onClick={() => setConfirmDelete(true)}>
+                <Doodle name="trash" size={15} /> Delete lesson
+              </button>
+            ))}
           <button type="button" className="btn btn-quiet" onClick={() => { setMeta(initial); setEditing(false); }}>Cancel</button>
           <button type="submit" className="btn btn-primary">Save lesson</button>
         </div>
@@ -136,7 +162,7 @@ export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFro
       <div className="sheet-head">
         <div>
           <span className="label">Lesson {meta.n}</span>
-          <h2>{longDate(meta.date)}</h2>
+          <h2>{meta.date ? longDate(meta.date) : "No date yet"}</h2>
         </div>
         <div className="sheet-head-side">
           {teacher && <span className="hint">Taught by {teacher.name}</span>}
@@ -223,7 +249,7 @@ export function LessonSheet({ postId, meta: initial, people, readOnly, deleteFro
       )}
 
       <section>
-        <h3 className="label">Questions for next Sunday</h3>
+        <h3 className="label">Questions for next lesson</h3>
         <ul className="questions">
           {meta.questions.map((q, i) => {
             const by = people.byId[q.by];
